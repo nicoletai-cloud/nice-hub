@@ -171,7 +171,6 @@ details.add summary{cursor:pointer;font-weight:500;font-size:19px}
       <button type="button" class="chip k-air" data-k="air" aria-pressed="true"><i></i>機場接送</button>
       <button type="button" class="chip k-wed" data-k="wed" aria-pressed="true"><i></i>結婚禮車</button>
       <button type="button" class="chip k-deco" data-k="deco" aria-pressed="true"><i></i>車頭彩</button>
-      <button type="button" class="chip k-t2768" data-k="t2768" aria-pressed="true"><i></i>2768</button>
     </div>
     <div class="calbar">
       <button type="button" class="btn" id="prevM" aria-label="上個月">‹</button>
@@ -182,22 +181,6 @@ details.add summary{cursor:pointer;font-weight:500;font-size:19px}
     <div class="grid7" id="grid7" role="grid"></div>
     <div class="calmsg" id="calMsg"></div>
     <div class="agenda" id="agenda"></div>
-    <details class="add" id="addBox">
-      <summary id="addSum">新增 2768 行程</summary>
-      <div class="addbody">
-        <label for="fDate">日期</label>
-        <input id="fDate" type="date">
-        <div class="two">
-          <div><label for="fTime">開始時間</label><input id="fTime" type="time"></div>
-          <div><label for="fEnd">結束時間（可不填）</label><input id="fEnd" type="time"></div>
-        </div>
-        <label for="fTitle">行程</label>
-        <input id="fTitle" type="text" autocomplete="off" placeholder="例如：載客去新竹、保養、洗車">
-        <label for="fNote">備註（可不填）</label>
-        <textarea id="fNote" rows="2"></textarea>
-        <div class="row" style="display:flex;flex-wrap:wrap;align-items:center;gap:10px"><button type="button" class="btn" id="saveEv">儲存行程</button><button type="button" class="btn" id="cancelEv" hidden>取消修改</button><span class="calmsg" id="addMsg"></span></div>
-      </div>
-    </details>
   </section>
 
   <section class="note" id="note" hidden>
@@ -290,13 +273,13 @@ details.add summary{cursor:pointer;font-weight:500;font-size:19px}
   /* ================= 行事曆 ================= */
   var KEY_CAL='nwc_hub_cal', KEY_FIL='nwc_hub_calf';
   var KN={air:'機場接送',wed:'結婚禮車',deco:'車頭彩',t2768:'2768'};
-  var KIND=['air','wed','deco','t2768'];
+  var KIND=['air','wed','deco'];
   function p2(n){return ('0'+n).slice(-2)}
   function ds(d){return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())}
   function esc(t){return String(t==null?'':t).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
   var todayS=ds(new Date());
   var viewY=new Date().getFullYear(), viewM=new Date().getMonth(), selDay=todayS;
-  var filt={air:true,wed:true,deco:true,t2768:true};
+  var filt={air:true,wed:true,deco:true};
   try{var f0=JSON.parse(ls(KEY_FIL)||'null'); if(f0) KIND.forEach(function(k){if(f0[k]===false) filt[k]=false})}catch(e){}
   var calStore={}; try{calStore=JSON.parse(ls(KEY_CAL)||'{}')||{}}catch(e){}   // {'2026-10':{ts,events:[]}}
   var calBusy=false, editId='';
@@ -394,35 +377,7 @@ details.add summary{cursor:pointer;font-weight:500;font-size:19px}
   $('nextM').addEventListener('click',function(){gotoMonth(viewY,viewM+1)});
   $('goToday').addEventListener('click',function(){selDay=todayS; var n=new Date(); gotoMonth(n.getFullYear(),n.getMonth())});
 
-  function resetForm(){
-    editId=''; $('fDate').value=selDay; $('fTime').value=''; $('fEnd').value=''; $('fTitle').value=''; $('fNote').value='';
-    $('addSum').textContent='新增 2768 行程'; $('cancelEv').hidden=true;
-  }
-  function findEv(id){var rec=calStore[monthKey(viewY,viewM)]; return ((rec&&rec.events)||[]).filter(function(e){return e.id===id})[0]}
-  var delTimer=null;
-  $('agenda').addEventListener('click',function(ev){
-    var b=ev.target.closest('button'); if(!b) return;
-    var eid=b.getAttribute('data-edit'), did=b.getAttribute('data-del');
-    if(eid){var e=findEv(eid); if(!e) return; editId=eid; $('fDate').value=e.date; $('fTime').value=e.time||''; $('fEnd').value=e.end||''; $('fTitle').value=e.title||''; $('fNote').value=e.note||'';
-      $('addSum').textContent='修改 2768 行程'; $('cancelEv').hidden=false; $('addBox').open=true; $('addBox').scrollIntoView({block:'center'}); return}
-    if(did){
-      if(b.getAttribute('data-arm')!=='1'){b.setAttribute('data-arm','1'); b.textContent='再按一次確定刪除'; clearTimeout(delTimer); delTimer=setTimeout(function(){b.setAttribute('data-arm','0'); b.textContent='刪除'},4000); return}
-      b.disabled=true; post({action:'hubCalDel',ids:[did]}).then(function(){loadCal(true)}).catch(function(e){calMsg(calErr(e),true); b.disabled=false});
-    }
-  });
-  $('cancelEv').addEventListener('click',function(){resetForm(); $('addMsg').textContent=''});
-  $('saveEv').addEventListener('click',function(){
-    var m=$('addMsg'); m.classList.add('err');
-    var date=$('fDate').value, title=String($('fTitle').value||'').trim();
-    if(!date){m.textContent='請選日期'; return}
-    if(!title){m.textContent='請填行程'; return}
-    var btn=$('saveEv'); btn.disabled=true; m.classList.remove('err'); m.textContent='儲存中…';
-    post({action:'hubCalAdd',id:editId||undefined,date:date,time:$('fTime').value,end:$('fEnd').value,title:title,note:$('fNote').value})
-      .then(function(){m.textContent='已儲存'; selDay=date; var d=new Date(date+'T00:00:00'); viewY=d.getFullYear(); viewM=d.getMonth(); resetForm(); $('addBox').open=false; renderCal(); loadCal(true)})
-      .catch(function(e){m.classList.add('err'); m.textContent=calErr(e)})
-      .then(function(){btn.disabled=false});
-  });
-  resetForm(); renderCal(); loadCal(true);
+  renderCal(); loadCal(true);
   document.addEventListener('visibilitychange',function(){if(!document.hidden) loadCal(false)});
   $('refresh').addEventListener('click',function(){loadCal(true)});
   load();
