@@ -97,6 +97,17 @@ details.conn summary{cursor:pointer;font-weight:500;font-size:19px}
 .day .mini{display:none;width:100%;font-size:14px;line-height:1.25;text-align:left;color:var(--muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .day .mini b{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--kc);margin-right:4px}
 @media (min-width:760px){.day{min-height:104px;align-items:stretch}.day .dn{align-self:center}.day .mini{display:block}.day .dots{display:none}}
+.vmode{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin-bottom:12px;background:var(--surface)}
+.vmode button{font:500 17px var(--f-body);color:var(--muted);background:transparent;border:0;padding:6px 20px;min-height:40px;cursor:pointer}
+.vmode button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:700}
+.vmode button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.weeklist{display:grid;gap:14px}
+.grid7[hidden],.weeklist[hidden],.agenda[hidden]{display:none}
+.wkday h3{margin:0 0 8px;font-size:21px;display:flex;align-items:center;gap:8px}
+.wkday.today h3 span.tg{background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:2px 10px;font-size:16px}
+.wkday .empty{color:var(--muted);font-size:18px;padding:2px 0 6px}
+.ev a.go{margin-top:6px;display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:6px 16px;border:1px solid var(--accent);border-radius:10px;color:var(--fg);font-size:18px;font-weight:700;text-decoration:none;justify-self:start}
+.ev a.go:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .agenda{margin-top:16px}
 .agenda h3{margin:0 0 8px;font-size:24px}
 .ev{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin-bottom:10px;display:grid;gap:4px}
@@ -172,6 +183,7 @@ details.add summary{cursor:pointer;font-weight:500;font-size:19px}
       <button type="button" class="chip k-wed" data-k="wed" aria-pressed="true"><i></i>結婚禮車</button>
       <button type="button" class="chip k-deco" data-k="deco" aria-pressed="true"><i></i>車頭彩</button>
     </div>
+    <div class="vmode" id="vmode" role="group" aria-label="檢視方式"><button type="button" data-m="month" aria-pressed="true">月</button><button type="button" data-m="week" aria-pressed="false">週</button></div>
     <div class="calbar">
       <button type="button" class="btn" id="prevM" aria-label="上個月">‹</button>
       <div class="ttl" id="monthTtl"></div>
@@ -180,6 +192,7 @@ details.add summary{cursor:pointer;font-weight:500;font-size:19px}
     </div>
     <div class="grid7" id="grid7" role="grid"></div>
     <div class="calmsg" id="calMsg"></div>
+    <div class="weeklist" id="weekList" hidden></div>
     <div class="agenda" id="agenda"></div>
   </section>
 
@@ -283,6 +296,16 @@ details.add summary{cursor:pointer;font-weight:500;font-size:19px}
   try{var f0=JSON.parse(ls(KEY_FIL)||'null'); if(f0) KIND.forEach(function(k){if(f0[k]===false) filt[k]=false})}catch(e){}
   var calStore={}; try{calStore=JSON.parse(ls(KEY_CAL)||'{}')||{}}catch(e){}   // {'2026-10':{ts,events:[]}}
   var calBusy=false, editId='';
+  var KEY_MODE='nwc_hub_calmode', calMode=(ls(KEY_MODE)==='week')?'week':'month';
+  var URL_AIR='https://nicoletai-cloud.github.io/nice-wedding-car/', URL_WED='https://nicoletai-cloud.github.io/nice-wedding-procession/';
+  function linkFor(e){
+    var id=String(e.id||''), i=id.indexOf(':'), pre=i>0?id.slice(0,i):'', rest=i>0?id.slice(i+1):id;
+    if(pre==='air') return URL_AIR+'#open='+encodeURIComponent(rest);
+    if(pre==='wed'||pre==='deco') return URL_WED+'#open='+encodeURIComponent(rest);
+    if(pre==='dship'||pre==='duse'||pre==='dback') return URL_WED+'#open=__deco';
+    return '';
+  }
+  function weekStart(day){var d=new Date(day+'T00:00:00'); d.setDate(d.getDate()-((d.getDay()+6)%7)); return d}
 
   function monthKey(y,m){return y+'-'+p2(m+1)}
   function rangeOf(y,m){
@@ -295,6 +318,10 @@ details.add summary{cursor:pointer;font-weight:500;font-size:19px}
     return list.filter(function(e){return e.date===day&&filt[e.kind]});
   }
   function renderCal(){
+    $('grid7').hidden=(calMode==='week'); $('agenda').hidden=(calMode==='week'); $('weekList').hidden=(calMode!=='week');
+    Array.prototype.forEach.call(document.querySelectorAll('#vmode button'),function(b){b.setAttribute('aria-pressed',b.getAttribute('data-m')===calMode?'true':'false')});
+    $('prevM').setAttribute('aria-label',calMode==='week'?'上一週':'上個月'); $('nextM').setAttribute('aria-label',calMode==='week'?'下一週':'下個月');
+    if(calMode==='week'){renderWeek(); return}
     $('monthTtl').textContent=viewY+' 年 '+(viewM+1)+' 月';
     var h='', names='一二三四五六日';
     for(var i=0;i<7;i++) h+='<div class="wd'+(i>=5?' we':'')+'" role="columnheader">'+names[i]+'</div>';
@@ -311,6 +338,15 @@ details.add summary{cursor:pointer;font-weight:500;font-size:19px}
     $('grid7').innerHTML=h;
     renderAgenda();
   }
+  function renderWeek(){
+    var ws=weekStart(selDay), we=new Date(ws); we.setDate(ws.getDate()+6), names='一二三四五六日', h='';
+    $('monthTtl').textContent=(ws.getMonth()+1)+'/'+ws.getDate()+' – '+(we.getMonth()+1)+'/'+we.getDate();
+    for(var i=0;i<7;i++){
+      var d=new Date(ws); d.setDate(ws.getDate()+i); var key=ds(d), evs=eventsFor(key);
+      h+='<div class="wkday'+(key===todayS?' today':'')+'"><h3>'+(d.getMonth()+1)+'/'+d.getDate()+'（週'+names[i]+'）'+(key===todayS?'<span class="tg">今天</span>':'')+'</h3>'+(evs.length?evs.map(evHtml).join(''):'<div class="empty">沒有行程</div>')+'</div>';
+    }
+    $('weekList').innerHTML=h;
+  }
   function evHtml(e){
     var tm=e.time?(e.time+(e.end?'–'+e.end:'')):'時間未定';
     var h='<div class="ev k-'+e.kind+'"><div class="top"><span class="tag">'+KN[e.kind]+'</span><span class="tm">'+esc(tm)+'</span>'+(e.warn&&e.kind!=='t2768'?'<span class="tag warn">需處理</span>':'')+'</div>';
@@ -318,6 +354,7 @@ details.add summary{cursor:pointer;font-weight:500;font-size:19px}
     if(e.sub) h+='<div class="sb'+(e.warn?' warn':'')+'">'+esc(e.sub)+'</div>';
     if(e.place) h+='<div class="pl">'+esc(e.place)+'</div>';
     if(e.note) h+='<div class="nt">'+esc(e.note)+'</div>';
+    var lk=linkFor(e); if(lk) h+='<a class="go" href="'+esc(lk)+'">在工具中開啟 ›</a>';
     if(e.manual) h+='<div class="acts"><button type="button" class="btn" data-edit="'+esc(e.id)+'">修改</button><button type="button" class="btn" data-del="'+esc(e.id)+'">刪除</button></div>';
     return h+'</div>';
   }
@@ -373,9 +410,15 @@ details.add summary{cursor:pointer;font-weight:500;font-size:19px}
     if(d.getMonth()!==viewM||d.getFullYear()!==viewY){gotoMonth(d.getFullYear(),d.getMonth()); return}
     renderCal();
   });
-  $('prevM').addEventListener('click',function(){gotoMonth(viewY,viewM-1)});
-  $('nextM').addEventListener('click',function(){gotoMonth(viewY,viewM+1)});
+  function shiftWeek(n){var d=new Date(selDay+'T00:00:00'); d.setDate(d.getDate()+7*n); selDay=ds(d); gotoMonth(d.getFullYear(),d.getMonth())}
+  $('prevM').addEventListener('click',function(){calMode==='week'?shiftWeek(-1):gotoMonth(viewY,viewM-1)});
+  $('nextM').addEventListener('click',function(){calMode==='week'?shiftWeek(1):gotoMonth(viewY,viewM+1)});
   $('goToday').addEventListener('click',function(){selDay=todayS; var n=new Date(); gotoMonth(n.getFullYear(),n.getMonth())});
+  $('vmode').addEventListener('click',function(ev){
+    var b=ev.target.closest('button'); if(!b) return; calMode=b.getAttribute('data-m')==='week'?'week':'month'; lsSet(KEY_MODE,calMode);
+    if(calMode==='week'){var sd=new Date(selDay+'T00:00:00'); if(sd.getMonth()!==viewM||sd.getFullYear()!==viewY){var t=new Date(); selDay=(t.getMonth()===viewM&&t.getFullYear()===viewY)?ds(t):ds(new Date(viewY,viewM,1))}}
+    var d=new Date(selDay+'T00:00:00'); gotoMonth(d.getFullYear(),d.getMonth());
+  });
 
   renderCal(); loadCal(true);
   document.addEventListener('visibilitychange',function(){if(!document.hidden) loadCal(false)});
