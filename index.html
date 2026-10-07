@@ -17,13 +17,14 @@
   --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
   --f-label:"Montserrat","Noto Sans TC","PingFang TC",sans-serif;
   --r:10px;
+  --c-air:#2F6F8F; --c-wed:#B8323A; --c-deco:#5E8A4E; --c-t2768:#7A62A8;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#1D1916; --surface:#26211D; --surface-2:#2F2823; --fg:#EFE4DA; --muted:#A8988A; --line:#3D342D;
-  --accent:#CFA163; --accent-ink:#1D1916; --accent-soft:#3A2E22; --ok:#8DB886; --warn:#E09A62; --warn-soft:#3F2C1D; color-scheme:dark}}
+  --accent:#CFA163; --accent-ink:#1D1916; --accent-soft:#3A2E22; --ok:#8DB886; --warn:#E09A62; --warn-soft:#3F2C1D; --c-air:#6FB1D1; --c-wed:#E58A8F; --c-deco:#98C58A; --c-t2768:#B6A3DD; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#1D1916; --surface:#26211D; --surface-2:#2F2823; --fg:#EFE4DA; --muted:#A8988A; --line:#3D342D;
-  --accent:#CFA163; --accent-ink:#1D1916; --accent-soft:#3A2E22; --ok:#8DB886; --warn:#E09A62; --warn-soft:#3F2C1D; color-scheme:dark}
+  --accent:#CFA163; --accent-ink:#1D1916; --accent-soft:#3A2E22; --ok:#8DB886; --warn:#E09A62; --warn-soft:#3F2C1D; --c-air:#6FB1D1; --c-wed:#E58A8F; --c-deco:#98C58A; --c-t2768:#B6A3DD; color-scheme:dark}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:21px;line-height:1.55}
@@ -68,6 +69,56 @@ details.conn summary{cursor:pointer;font-weight:500;font-size:19px}
 .connbody .row{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
 .connbody .st{font-size:17px;color:var(--muted)}
 .connbody .st.err{color:var(--warn)}
+
+/* ---- 行事曆 ---- */
+.cal{margin-top:26px}
+.cal h2{margin:0 0 10px;font-size:30px;font-weight:700;letter-spacing:.04em}
+.k-air{--kc:var(--c-air)} .k-wed{--kc:var(--c-wed)} .k-deco{--kc:var(--c-deco)} .k-t2768{--kc:var(--c-t2768)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.chip{font:500 17px var(--f-body);display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:6px 14px;min-height:40px;cursor:pointer}
+.chip i{width:12px;height:12px;border-radius:50%;background:var(--kc,var(--muted));display:inline-block}
+.chip[aria-pressed="false"]{color:var(--muted);background:transparent}
+.chip[aria-pressed="false"] i{background:transparent;box-shadow:inset 0 0 0 2px var(--kc,var(--muted))}
+.chip:focus-visible,.day:focus-visible,.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.calbar{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.calbar .ttl{flex:1;text-align:center;font-size:21px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.calbar .btn{min-width:44px;padding-inline:10px}
+.grid7{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.wd{text-align:center;font-size:16px;color:var(--muted);padding:2px 0}
+.wd.we{color:var(--warn)}
+.day{font:inherit;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:8px;min-height:68px;padding:6px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;min-width:0;overflow:hidden}
+.day.out{opacity:.45}
+.day .dn{font-size:20px;font-weight:500;font-variant-numeric:tabular-nums;line-height:1.1}
+.day.today .dn{background:var(--accent);color:var(--accent-ink);border-radius:999px;min-width:32px;padding:2px 6px;text-align:center}
+.day.sel{border-color:var(--accent);box-shadow:inset 0 0 0 2px var(--accent)}
+.dots{display:flex;flex-wrap:wrap;justify-content:center;gap:4px}
+.dots i{width:12px;height:12px;border-radius:50%;background:var(--kc)}
+.dots i.w{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--warn)}
+.day .mini{display:none;width:100%;font-size:14px;line-height:1.25;text-align:left;color:var(--muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.day .mini b{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--kc);margin-right:4px}
+@media (min-width:760px){.day{min-height:104px;align-items:stretch}.day .dn{align-self:center}.day .mini{display:block}.day .dots{display:none}}
+.agenda{margin-top:16px}
+.agenda h3{margin:0 0 8px;font-size:24px}
+.ev{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin-bottom:10px;display:grid;gap:4px}
+.ev .top{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.tag{font-size:15px;font-weight:700;color:var(--kc);border:1.5px solid var(--kc);border-radius:999px;padding:0 10px;line-height:1.6}
+.tag.warn{color:var(--warn);border-color:var(--warn);background:var(--warn-soft)}
+.ev .tm{font-weight:700;font-variant-numeric:tabular-nums;font-size:22px}
+.ev .tt{font-size:21px;font-weight:500}
+.ev .sb,.ev .pl,.ev .nt{font-size:18px;color:var(--muted)}
+.ev .sb.warn{color:var(--warn);font-weight:700}
+.ev .acts{display:flex;gap:8px;margin-top:4px}
+.empty{color:var(--muted);font-size:19px;padding:10px 2px}
+.calmsg{font-size:17px;color:var(--muted);margin-top:8px}
+.calmsg.err{color:var(--warn)}
+details.add{margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 16px}
+details.add summary{cursor:pointer;font-weight:500;font-size:19px}
+.addbody{display:grid;gap:8px;margin-top:12px}
+.addbody label{font-size:17px;color:var(--muted)}
+.addbody input,.addbody textarea{font:inherit;font-size:19px;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;width:100%;min-width:0;min-height:44px}
+.addbody .two{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:520px){.addbody .two{grid-template-columns:minmax(0,1fr)}}
+.addbody input:focus,.addbody textarea:focus{outline:2px solid var(--accent);outline-offset:1px}
 @media (prefers-reduced-motion:reduce){a.tool{transition:none}}
 </style>
 </head>
@@ -112,6 +163,42 @@ details.conn summary{cursor:pointer;font-weight:500;font-size:19px}
       <div class="go"><span>進入結婚禮車</span><span aria-hidden="true">→</span></div>
     </a>
   </main>
+
+
+  <section class="cal" id="cal" aria-label="工作行事曆">
+    <h2>行事曆</h2>
+    <div class="chips" id="chips">
+      <button type="button" class="chip k-air" data-k="air" aria-pressed="true"><i></i>機場接送</button>
+      <button type="button" class="chip k-wed" data-k="wed" aria-pressed="true"><i></i>結婚禮車</button>
+      <button type="button" class="chip k-deco" data-k="deco" aria-pressed="true"><i></i>車頭彩</button>
+      <button type="button" class="chip k-t2768" data-k="t2768" aria-pressed="true"><i></i>2768</button>
+    </div>
+    <div class="calbar">
+      <button type="button" class="btn" id="prevM" aria-label="上個月">‹</button>
+      <div class="ttl" id="monthTtl"></div>
+      <button type="button" class="btn" id="nextM" aria-label="下個月">›</button>
+      <button type="button" class="btn" id="goToday">今天</button>
+    </div>
+    <div class="grid7" id="grid7" role="grid"></div>
+    <div class="calmsg" id="calMsg"></div>
+    <div class="agenda" id="agenda"></div>
+    <details class="add" id="addBox">
+      <summary id="addSum">新增 2768 行程</summary>
+      <div class="addbody">
+        <label for="fDate">日期</label>
+        <input id="fDate" type="date">
+        <div class="two">
+          <div><label for="fTime">開始時間</label><input id="fTime" type="time"></div>
+          <div><label for="fEnd">結束時間（可不填）</label><input id="fEnd" type="time"></div>
+        </div>
+        <label for="fTitle">行程</label>
+        <input id="fTitle" type="text" autocomplete="off" placeholder="例如：載客去新竹、保養、洗車">
+        <label for="fNote">備註（可不填）</label>
+        <textarea id="fNote" rows="2"></textarea>
+        <div class="row" style="display:flex;flex-wrap:wrap;align-items:center;gap:10px"><button type="button" class="btn" id="saveEv">儲存行程</button><button type="button" class="btn" id="cancelEv" hidden>取消修改</button><span class="calmsg" id="addMsg"></span></div>
+      </div>
+    </details>
+  </section>
 
   <section class="note" id="note" hidden>
     <p>數量來自「好好禮車機器人」。這個瀏覽器還沒設定連線：在下面貼上機器人網址與金鑰，只會存在這個瀏覽器（和機場工具共用同一份設定），不會寫進程式碼。</p>
@@ -194,11 +281,150 @@ details.conn summary{cursor:pointer;font-weight:500;font-size:19px}
     if(!/^https:\/\/script\.google\.com\/macros\/s\/[^\/]+\/exec$/.test(u)){m.textContent='網址要是 https://script.google.com/macros/s/…/exec 開頭到 /exec 結尾';return}
     if(!t){m.textContent='請貼上金鑰';return}
     lsSet(KEY_URL,u); lsSet(KEY_TOKEN,t); $('inTok').value=''; m.classList.remove('err'); m.textContent='已儲存';
-    $('conn').open=false; load();
+    $('conn').open=false; load(); if(typeof loadCal==='function') loadCal(true);
   });
   $('refresh').addEventListener('click',load);
   document.addEventListener('visibilitychange',function(){if(!document.hidden&&(!cached||Date.now()-cached.ts>120000)) load()});
   setInterval(function(){if(!document.hidden) load()},300000);
+
+  /* ================= 行事曆 ================= */
+  var KEY_CAL='nwc_hub_cal', KEY_FIL='nwc_hub_calf';
+  var KN={air:'機場接送',wed:'結婚禮車',deco:'車頭彩',t2768:'2768'};
+  var KIND=['air','wed','deco','t2768'];
+  function p2(n){return ('0'+n).slice(-2)}
+  function ds(d){return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())}
+  function esc(t){return String(t==null?'':t).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  var todayS=ds(new Date());
+  var viewY=new Date().getFullYear(), viewM=new Date().getMonth(), selDay=todayS;
+  var filt={air:true,wed:true,deco:true,t2768:true};
+  try{var f0=JSON.parse(ls(KEY_FIL)||'null'); if(f0) KIND.forEach(function(k){if(f0[k]===false) filt[k]=false})}catch(e){}
+  var calStore={}; try{calStore=JSON.parse(ls(KEY_CAL)||'{}')||{}}catch(e){}   // {'2026-10':{ts,events:[]}}
+  var calBusy=false, editId='';
+
+  function monthKey(y,m){return y+'-'+p2(m+1)}
+  function rangeOf(y,m){
+    var a=new Date(y,m,1); a.setDate(a.getDate()-a.getDay()-1);
+    var b=new Date(y,m+1,0); b.setDate(b.getDate()+(6-b.getDay())+1);
+    return {from:ds(a),to:ds(b)};
+  }
+  function eventsFor(day){
+    var rec=calStore[monthKey(viewY,viewM)]; var list=(rec&&rec.events)||[];
+    return list.filter(function(e){return e.date===day&&filt[e.kind]});
+  }
+  function renderCal(){
+    $('monthTtl').textContent=viewY+' 年 '+(viewM+1)+' 月';
+    var h='', names='日一二三四五六';
+    for(var i=0;i<7;i++) h+='<div class="wd'+(i===0||i===6?' we':'')+'" role="columnheader">'+names[i]+'</div>';
+    var first=new Date(viewY,viewM,1), start=new Date(first); start.setDate(1-first.getDay());
+    var last=new Date(viewY,viewM+1,0), total=Math.ceil((first.getDay()+last.getDate())/7)*7;
+    for(var n=0;n<total;n++){
+      var d=new Date(start); d.setDate(start.getDate()+n); var key=ds(d), evs=eventsFor(key), out=d.getMonth()!==viewM;
+      var kinds={}, warn={}; evs.forEach(function(e){kinds[e.kind]=(kinds[e.kind]||0)+1; if(e.warn) warn[e.kind]=1});
+      var dots=KIND.filter(function(k){return kinds[k]}).map(function(k){return '<i class="k-'+k+(warn[k]?' w':'')+'"></i>'}).join('');
+      var mini=evs.slice(0,2).map(function(e){return '<span class="mini k-'+e.kind+'"><b></b>'+esc((e.time?e.time+' ':'')+e.title)+'</span>'}).join('')+(evs.length>2?'<span class="mini">還有 '+(evs.length-2)+' 項</span>':'');
+      var label=(d.getMonth()+1)+'月'+d.getDate()+'日'+(evs.length?'，'+evs.length+' 項行程':'，沒有行程');
+      h+='<button type="button" role="gridcell" class="day'+(out?' out':'')+(key===todayS?' today':'')+(key===selDay?' sel':'')+'" data-d="'+key+'" aria-label="'+label+'"><span class="dn">'+d.getDate()+'</span><span class="dots">'+dots+'</span>'+mini+'</button>';
+    }
+    $('grid7').innerHTML=h;
+    renderAgenda();
+  }
+  function evHtml(e){
+    var tm=e.time?(e.time+(e.end?'–'+e.end:'')):'時間未定';
+    var h='<div class="ev k-'+e.kind+'"><div class="top"><span class="tag">'+KN[e.kind]+'</span><span class="tm">'+esc(tm)+'</span>'+(e.warn&&e.kind!=='t2768'?'<span class="tag warn">需處理</span>':'')+'</div>';
+    h+='<div class="tt">'+esc(e.title)+'</div>';
+    if(e.sub) h+='<div class="sb'+(e.warn?' warn':'')+'">'+esc(e.sub)+'</div>';
+    if(e.place) h+='<div class="pl">'+esc(e.place)+'</div>';
+    if(e.note) h+='<div class="nt">'+esc(e.note)+'</div>';
+    if(e.manual) h+='<div class="acts"><button type="button" class="btn" data-edit="'+esc(e.id)+'">修改</button><button type="button" class="btn" data-del="'+esc(e.id)+'">刪除</button></div>';
+    return h+'</div>';
+  }
+  function renderAgenda(){
+    var d=new Date(selDay+'T00:00:00'), evs=eventsFor(selDay), names='日一二三四五六';
+    var h='<h3>'+(d.getMonth()+1)+'/'+d.getDate()+'（週'+names[d.getDay()]+'）'+(selDay===todayS?' 今天':'')+'</h3>';
+    h+=evs.length?evs.map(evHtml).join(''):'<div class="empty">這天沒有行程</div>';
+    $('agenda').innerHTML=h;
+  }
+  function calMsg(t,err){var m=$('calMsg'); m.textContent=t||''; m.classList.toggle('err',!!err)}
+  function post(body){
+    var url=botUrl(), token=String(ls(KEY_TOKEN)||'').trim();
+    if(!url||!token) return Promise.reject(new Error('尚未連線'));
+    body.token=token;
+    var ctl=('AbortController' in window)?new AbortController():null, timer=setTimeout(function(){ctl&&ctl.abort()},25000);
+    return fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body),signal:ctl?ctl.signal:undefined,cache:'no-store'})
+      .then(function(r){return r.json()})
+      .then(function(j){clearTimeout(timer); if(!j||!j.ok) throw new Error(j&&j.error?j.error:'機器人沒有回應'); return j},function(e){clearTimeout(timer); throw e});
+  }
+  function calErr(e){
+    var m=String(e&&e.message||e);
+    if(/尚未連線/.test(m)) return '尚未連線機器人，連線設定好之後才看得到行事曆';
+    if(/金鑰/.test(m)) return '金鑰不正確，請到連線設定重新貼上';
+    if(/abort/i.test(m)) return '連線逾時，請稍後再試';
+    if(/unknown|未知|action/i.test(m)) return '機器人還不支援行事曆，請確認已部署最新版本';
+    return m.length<40&&/[一-鿿]/.test(m)?m:'讀取失敗，請確認網路後再試';
+  }
+  function loadCal(force){
+    var k=monthKey(viewY,viewM), rec=calStore[k];
+    if(calBusy) return;
+    if(!force&&rec&&Date.now()-rec.ts<120000) return;
+    var r=rangeOf(viewY,viewM); calBusy=true; calMsg(rec?'更新中…':'正在讀取行事曆…');
+    post({action:'hubCal',from:r.from,to:r.to}).then(function(j){
+      calStore[k]={ts:Date.now(),events:j.events||[]};
+      var keys=Object.keys(calStore).sort(); while(keys.length>4) delete calStore[keys.shift()];
+      lsSet(KEY_CAL,JSON.stringify(calStore));
+      var errs=j.errs||{}, bad=Object.keys(errs).map(function(x){return KN[x==='wed'?'wed':x]||x});
+      calMsg(bad.length?'有一部分讀不到：'+bad.join('、'):'已更新，'+hhmm(Date.now()),!!bad.length);
+      renderCal();
+    }).catch(function(e){calMsg(calErr(e)+(rec?'（顯示 '+hhmm(rec.ts)+' 的舊資料）':''),true)})
+      .then(function(){calBusy=false});
+  }
+  function gotoMonth(y,m){var d=new Date(y,m,1); viewY=d.getFullYear(); viewM=d.getMonth(); renderCal(); loadCal(false)}
+
+  $('chips').addEventListener('click',function(ev){
+    var b=ev.target.closest('.chip'); if(!b) return; var k=b.getAttribute('data-k');
+    filt[k]=!filt[k]; b.setAttribute('aria-pressed',filt[k]?'true':'false'); lsSet(KEY_FIL,JSON.stringify(filt)); renderCal();
+  });
+  KIND.forEach(function(k){var b=document.querySelector('.chip[data-k="'+k+'"]'); if(b) b.setAttribute('aria-pressed',filt[k]?'true':'false')});
+  $('grid7').addEventListener('click',function(ev){
+    var b=ev.target.closest('.day'); if(!b) return; selDay=b.getAttribute('data-d');
+    var d=new Date(selDay+'T00:00:00');
+    if(d.getMonth()!==viewM||d.getFullYear()!==viewY){gotoMonth(d.getFullYear(),d.getMonth()); return}
+    renderCal();
+  });
+  $('prevM').addEventListener('click',function(){gotoMonth(viewY,viewM-1)});
+  $('nextM').addEventListener('click',function(){gotoMonth(viewY,viewM+1)});
+  $('goToday').addEventListener('click',function(){selDay=todayS; var n=new Date(); gotoMonth(n.getFullYear(),n.getMonth())});
+
+  function resetForm(){
+    editId=''; $('fDate').value=selDay; $('fTime').value=''; $('fEnd').value=''; $('fTitle').value=''; $('fNote').value='';
+    $('addSum').textContent='新增 2768 行程'; $('cancelEv').hidden=true;
+  }
+  function findEv(id){var rec=calStore[monthKey(viewY,viewM)]; return ((rec&&rec.events)||[]).filter(function(e){return e.id===id})[0]}
+  var delTimer=null;
+  $('agenda').addEventListener('click',function(ev){
+    var b=ev.target.closest('button'); if(!b) return;
+    var eid=b.getAttribute('data-edit'), did=b.getAttribute('data-del');
+    if(eid){var e=findEv(eid); if(!e) return; editId=eid; $('fDate').value=e.date; $('fTime').value=e.time||''; $('fEnd').value=e.end||''; $('fTitle').value=e.title||''; $('fNote').value=e.note||'';
+      $('addSum').textContent='修改 2768 行程'; $('cancelEv').hidden=false; $('addBox').open=true; $('addBox').scrollIntoView({block:'center'}); return}
+    if(did){
+      if(b.getAttribute('data-arm')!=='1'){b.setAttribute('data-arm','1'); b.textContent='再按一次確定刪除'; clearTimeout(delTimer); delTimer=setTimeout(function(){b.setAttribute('data-arm','0'); b.textContent='刪除'},4000); return}
+      b.disabled=true; post({action:'hubCalDel',ids:[did]}).then(function(){loadCal(true)}).catch(function(e){calMsg(calErr(e),true); b.disabled=false});
+    }
+  });
+  $('cancelEv').addEventListener('click',function(){resetForm(); $('addMsg').textContent=''});
+  $('saveEv').addEventListener('click',function(){
+    var m=$('addMsg'); m.classList.add('err');
+    var date=$('fDate').value, title=String($('fTitle').value||'').trim();
+    if(!date){m.textContent='請選日期'; return}
+    if(!title){m.textContent='請填行程'; return}
+    var btn=$('saveEv'); btn.disabled=true; m.classList.remove('err'); m.textContent='儲存中…';
+    post({action:'hubCalAdd',id:editId||undefined,date:date,time:$('fTime').value,end:$('fEnd').value,title:title,note:$('fNote').value})
+      .then(function(){m.textContent='已儲存'; selDay=date; var d=new Date(date+'T00:00:00'); viewY=d.getFullYear(); viewM=d.getMonth(); resetForm(); $('addBox').open=false; renderCal(); loadCal(true)})
+      .catch(function(e){m.classList.add('err'); m.textContent=calErr(e)})
+      .then(function(){btn.disabled=false});
+  });
+  resetForm(); renderCal(); loadCal(true);
+  document.addEventListener('visibilitychange',function(){if(!document.hidden) loadCal(false)});
+  $('refresh').addEventListener('click',function(){loadCal(true)});
   load();
 })();
 </script>
