@@ -58,6 +58,16 @@ a.tool:hover{border-color:var(--accent)}
 .go{margin-top:auto;display:flex;justify-content:space-between;align-items:center;font-weight:500;color:var(--accent);font-size:17px;border-top:1px solid var(--line);padding-top:12px}
 .note{margin-top:18px;font-size:15px;color:var(--muted)}
 .note a{color:var(--accent)}
+.note p{margin:0}
+details.conn{margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 16px}
+details.conn summary{cursor:pointer;font-weight:500;font-size:16px}
+.connbody{display:grid;gap:8px;margin-top:12px}
+.connbody label{font-size:14px;color:var(--muted)}
+.connbody input{font:inherit;font-size:16px;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;width:100%;min-width:0;min-height:44px}
+.connbody input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.connbody .row{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.connbody .st{font-size:14px;color:var(--muted)}
+.connbody .st.err{color:var(--warn)}
 @media (prefers-reduced-motion:reduce){a.tool{transition:none}}
 </style>
 </head>
@@ -103,7 +113,19 @@ a.tool:hover{border-color:var(--accent)}
     </a>
   </main>
 
-  <p class="note" id="note" hidden>數量來自「好好禮車機器人」。第一次使用請先到機場工具的「收據」分頁，在「派車機器人連線」貼上網址與金鑰，這裡就會自動顯示。</p>
+  <section class="note" id="note" hidden>
+    <p>數量來自「好好禮車機器人」。這個瀏覽器還沒設定連線：在下面貼上機器人網址與金鑰，只會存在這個瀏覽器（和機場工具共用同一份設定），不會寫進程式碼。</p>
+  </section>
+  <details class="conn" id="conn">
+    <summary>連線設定</summary>
+    <div class="connbody">
+      <label for="inUrl">機器人程式網址（結尾是 /exec）</label>
+      <input id="inUrl" type="text" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/…/exec">
+      <label for="inTok">機器人金鑰（Apps Script 裡的 TOKEN）</label>
+      <input id="inTok" type="password" autocomplete="off" placeholder="貼上金鑰">
+      <div class="row"><button type="button" class="btn" id="saveConn">儲存並讀取</button><span class="st" id="connMsg"></span></div>
+    </div>
+  </details>
 </div>
 
 <script>
@@ -140,7 +162,7 @@ a.tool:hover{border-color:var(--accent)}
     if(busy) return;
     var url=botUrl(), token=String(ls(KEY_TOKEN)||'').trim();
     if(!url||!token){
-      $('note').hidden=false;
+      $('note').hidden=false; openConn();
       status(cached&&cached.ts?'尚未連線機器人，顯示的是 '+hhmm(cached.ts)+' 的舊數字':'尚未連線機器人，還看不到今日待辦數量',true);
       return;
     }
@@ -164,6 +186,16 @@ a.tool:hover{border-color:var(--accent)}
       })
       .then(function(){clearTimeout(timer);busy=false;$('refresh').disabled=false});
   }
+
+  function openConn(){var d=$('conn'); if(d) d.open=true}
+  $('saveConn').addEventListener('click',function(){
+    var u=String($('inUrl').value||'').trim().split('?')[0].split('#')[0], t=String($('inTok').value||'').trim(), m=$('connMsg');
+    m.classList.add('err');
+    if(!/^https:\/\/script\.google\.com\/macros\/s\/[^\/]+\/exec$/.test(u)){m.textContent='網址要是 https://script.google.com/macros/s/…/exec 開頭到 /exec 結尾';return}
+    if(!t){m.textContent='請貼上金鑰';return}
+    lsSet(KEY_URL,u); lsSet(KEY_TOKEN,t); $('inTok').value=''; m.classList.remove('err'); m.textContent='已儲存';
+    $('conn').open=false; load();
+  });
   $('refresh').addEventListener('click',load);
   document.addEventListener('visibilitychange',function(){if(!document.hidden&&(!cached||Date.now()-cached.ts>120000)) load()});
   setInterval(function(){if(!document.hidden) load()},300000);
