@@ -84,7 +84,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       <div class="err" id="e-phone"></div>
     </div>
     <div class="field">
-      <label>居住地區<small>縣市可複選，選了縣市再選地區</small></label>
+      <label>居住地區<small>請填實際居住的地區，不是接案地區；縣市可複選，選了縣市再選地區</small></label>
       <div class="chips" id="cityChips"></div>
       <div id="distBox"></div>
       <div class="err" id="e-area"></div>
@@ -95,11 +95,6 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       <div class="err" id="e-zodiac"></div>
     </div>
     <div class="sec">車輛資料</div>
-    <div class="field">
-      <label for="plate">車牌<small>例：RED-7380</small></label>
-      <input id="plate" autocapitalize="characters" maxlength="10" required>
-      <div class="err" id="e-plate"></div>
-    </div>
     <div class="field">
       <label>廠牌</label>
       <div class="chips" id="brandChips">
@@ -113,6 +108,11 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       <div class="chips" id="modelChips" hidden></div>
       <input id="model" maxlength="25" placeholder="其他車款請直接輸入" required>
       <div class="err" id="e-model"></div>
+    </div>
+    <div class="field">
+      <label for="plate">車牌<small>例：RED-7380</small></label>
+      <input id="plate" autocapitalize="characters" maxlength="10" required>
+      <div class="err" id="e-plate"></div>
     </div>
     <div class="field">
       <label for="seats">座位數<small>含司機</small></label>
