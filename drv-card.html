@@ -32,6 +32,7 @@ input.bad{border-color:var(--warn);background:var(--warn-soft)}
 button.go{font:inherit;font-weight:700;font-size:18px;color:var(--accent-ink);background:var(--accent);border:0;border-radius:12px;min-height:52px;width:100%;cursor:pointer;margin-top:4px}
 button.go:disabled{opacity:.6}
 .note{border-radius:12px;padding:14px 16px;white-space:pre-line}
+#ownLine{white-space:normal}
 .note.warn{background:var(--warn-soft);color:var(--warn)}
 .note.ok{background:var(--ok-soft);color:var(--ok)}
 .state{text-align:center;color:var(--muted);padding:48px 0}
@@ -63,6 +64,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   <div class="brand">好好禮車 司機回報平台</div>
   <h1 id="title">填寫車卡</h1>
   <p class="lead" id="lead">填好按送出就完成綁定，之後接單不用再填資料。</p>
+  <div class="note warn" id="ownLine" style="margin:0 0 16px">⚠️ 請用<b>駕駛本人</b>的 LINE 開啟並填寫。<br>這個 LINE 會綁定成司機帳號，之後的派車通知都會傳到這裡，請不要用家人或車行的 LINE 代填。</div>
 
   <div class="state" id="loading">讀取中…</div>
   <div class="note warn" id="fatal" hidden></div>
@@ -258,7 +260,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       .then(function(j){
         if (!j || !j.ok) throw new Error((j && j.error) || '送出失敗，請再試一次');
         if (!j.done){ $('srvErr').hidden = false; $('srvErr').textContent = (j.msg || '資料有誤，請檢查後再送出').split('\n')[0]; return; }
-        $('f').hidden = true; $('done').hidden = false;
+        $('f').hidden = true; $('done').hidden = false; $('ownLine').hidden = true;
         $('doneTitle').textContent = bound ? '車卡已更新' : '綁定完成';
         $('doneMsg').textContent = bound ? '資料已更新，謝謝！' : '之後接單不用再填資料。\n車子或電話有變，再從選單按「綁定車卡」修改就好。\n\n接下來請上傳駕照、行照、保險單和車輛照片。';
         $('toDocs').hidden = false;
@@ -330,7 +332,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       .catch(function(err){ dErr(err.message || String(err)); }).then(function(){ dBusy = false; $('dSave').textContent = '儲存'; });
   });
   function openDocs(){
-    $('f').hidden = true; $('done').hidden = true; $('loading').hidden = false;
+    $('ownLine').hidden = true; $('f').hidden = true; $('done').hidden = true; $('loading').hidden = false;
     $('title').textContent = '上傳證件'; $('lead').textContent = '用手機直接拍照就可以，每一項上傳後會顯示 ✓。';
     return post({ action: 'drvLiff', op: 'docs', idToken: idToken }).then(function(j){
       if (!j || !j.ok) throw new Error((j && j.error) || '讀取失敗，請關掉後重新開啟');
