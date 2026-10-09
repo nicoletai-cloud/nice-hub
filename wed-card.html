@@ -165,10 +165,10 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       <input id="modNote" maxlength="60" placeholder="說明改裝項目，例：改輪框、降低車身" hidden>
       <div class="err" id="e-mod"></div>
     </div>
-    <div class="sec">車輛外觀照片<small>1～3 張，拍得到車頭和車牌</small></div>
+    <div class="sec">車輛外觀照片<small>1～3 張，拍得到車頭和車牌；現在沒有可以先送出，之後再補</small></div>
     <div id="photos"></div>
     <div class="err" id="e-photos"></div>
-    <div class="sec">保險單<small>需包含強制險及任意險，照片或 PDF，最多 5 個檔案</small></div>
+    <div class="sec">保險單<small>需包含強制險及任意險，照片或 PDF，最多 5 個檔案；可以之後再補</small></div>
     <div id="insBox"></div>
     <div class="err" id="e-ins"></div>
     <button type="button" class="go ghost" id="carDel" hidden>刪除這台車</button>
@@ -296,7 +296,8 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   function curCar(){ return cars.filter(function(c){ return c.cid === cid; })[0] || null; }
   function setFiles(j){ if (j && j.cars) cars = j.cars; var c = curCar(); photos = (c && c.photos) || []; ins = (c && c.ins) || []; renderPhotos(); renderCarPick(); }
   // 一位司機可以有好幾台車：上面列出已登記的車，點一台修改，或新增一台
-  function carLabel(c){ return [c.brand, c.model, c.plate].filter(Boolean).join(' ') || '新的一台車'; }
+  function carLabel(c){ var t = [c.brand, c.model, c.plate].filter(Boolean).join(' ') || '新的一台車'; return c.saved && (!(c.photos || []).length || !(c.ins || []).length) ? t + '（待補照片）' : t; }
+  function missTxt(){ var m = []; if (!photos.length) m.push('車輛外觀照片'); if (!ins.length) m.push('保險單'); return m.length ? '\n\n還沒上傳：' + m.join('、') + '。\n之後打開這個表單，選這台車補上就好。' : ''; }
   function renderCarPick(){
     var box = $('carPick'), saved = cars.filter(function(c){ return c.saved; });
     box.hidden = !bound || !saved.length;
@@ -389,8 +390,6 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     if (!val('emRel')) errs.emRel = '請選或填關係';
     if (yn.wrap === null) errs.wrap = '請選有沒有包膜'; else if (yn.wrap && !val('wrapNote')) errs.wrap = '請簡單說明包膜內容';
     if (yn.mod === null) errs.mod = '請選有沒有改裝'; else if (yn.mod && !val('modNote')) errs.mod = '請簡單說明改裝內容';
-    if (!photos.length) errs.photos = '請至少上傳 1 張車輛外觀照片';
-    if (!ins.length) errs.ins = '請上傳保險單（需包含強制險及任意險）';
     FIELDS.forEach(function(k){ $(k).classList.toggle('bad', !!errs[k]); $('e-' + k).textContent = errs[k] || ''; });
     ['area','zodiac','brand','wrap','mod','photos','ins'].forEach(function(k){ $('e-' + k).textContent = errs[k] || ''; });
     var first = Object.keys(errs)[0];
@@ -415,6 +414,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
         $('f').hidden = true; $('done').hidden = false; $('ownLine').hidden = true;
         $('doneTitle').textContent = kind === 'new' ? '綁定完成' : kind === 'car' ? '已新增這台車' : '車卡已更新';
         $('doneMsg').textContent = kind === 'new' ? '謝謝！之後派車不用再填資料。\n有第二台車的話，按下面「再新增一台車」。\n車子或電話有變，再打開這個表單修改就好。' : kind === 'car' ? '謝謝！這台車已經加進你的車卡。' : '資料已更新，謝謝！';
+        $('doneMsg').textContent += missTxt();
         try { if (liff.isInClient()) liff.sendMessages([{ type: 'text', text: kind === 'new' ? '✅ 禮車車卡已送出' : kind === 'car' ? '✅ 已新增一台車：' + val('plate').toUpperCase() : '✅ 禮車車卡已更新' }]).catch(function(){}); } catch (x) {}
       })
       .catch(function(err){ $('srvErr').hidden = false; $('srvErr').textContent = err.message || String(err); })
@@ -426,6 +426,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   // 舊車款字串拆回廠牌
   var BRANDS = ['Tesla','Benz','BMW','Maserati','Porsche','Bentley','Rolls-Royce','Lexus','Toyota'];
   liff.init({ liffId: LIFF_ID }).then(function(){
+    if (/[?&]liff\.state=/.test(location.search)) return null; // LIFF 會再轉址一次，帶上 car／to 參數
     if (!liff.isLoggedIn()){ liff.login({ redirectUri: location.href }); return null; }
     idToken = liff.getIDToken() || '';
     return liff.getProfile().then(function(p){ disp = p.displayName || ''; }, function(){}).then(function(){ return post({ action: 'wedLiff', op: 'load', idToken: idToken }); });
@@ -439,7 +440,8 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       areaLoad(pp.area);
       if (pp.zodiac) setZodiac(pp.zodiac);
     }
-    var first = cars.filter(function(c){ return c.saved; })[0] || cars[0] || null;
+    var Q = new URLSearchParams(location.search), qCar = Q.get('car') || '', qTo = Q.get('to') || '';
+    var first = cars.filter(function(c){ return c.cid === qCar; })[0] || cars.filter(function(c){ return c.saved; })[0] || cars[0] || null;
     cid = first ? first.cid : newCid();
     if (bound){
       $('title').textContent = '更新禮車車卡'; $('lead').textContent = '確認或修改下面的資料，改好按送出。';
@@ -447,6 +449,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     }
     loadCar(first);
     $('loading').hidden = true; $('f').hidden = false;
+    if (qTo === 'photos' && bound) setTimeout(function(){ var t = !photos.length || ins.length ? 'photos' : 'insBox'; $(t).previousElementSibling.scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 150);
   }).catch(function(err){ fatal(err && err.message ? err.message : '讀取失敗，請關掉後重新開啟'); });
 })();
 </script>
