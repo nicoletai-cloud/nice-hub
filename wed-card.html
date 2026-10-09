@@ -595,7 +595,8 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     body('<h1>禮車司機教案</h1><p class="sub">最後更新 ' + vtxt + '・內容會持續更新，每次任務前請再讀一次</p><nav class="lnav" id="lnav"></nav><div id="ldoc"></div><div class="lread" id="lread"></div>');
     var host = document.getElementById('ldoc'), sh = host.attachShadow ? host.attachShadow({ mode: 'closed' }) : host;
     sh.innerHTML = j.html + '<style>:host{display:block;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}' +
-      '*{max-width:100%!important;box-sizing:border-box}img{height:auto!important;max-width:280px!important;width:auto!important}span:has(>img){width:auto!important;height:auto!important}' +
+      '*{max-width:100%!important;box-sizing:border-box}img{height:auto!important;max-width:100%!important;width:100%!important}span:has(>img){width:auto!important;height:auto!important}' +
+      'ol,ul{padding-left:1.5em!important;margin-left:0!important;margin-right:0!important}li{margin-left:0!important;padding-left:.2em!important;text-indent:0!important}p{margin-left:0!important;margin-right:0!important;padding-left:0!important;padding-right:0!important;text-indent:0!important}li>p{margin:0!important}' +
       'p,li{line-height:1.65!important}h1{font-size:20px!important;margin:22px 0 6px!important;padding-top:10px!important;border-top:2px solid #c9a46b}h1:first-of-type{border-top:0;margin-top:0!important;padding-top:0!important}h2{font-size:17px!important}' +
       'table{width:100%!important;border-collapse:collapse!important;margin:8px 0!important}td{background:#fffbea!important;padding:10px!important}' +
       'section.pg[hidden]{display:none}.cpy{display:block;width:100%;font:inherit;font-size:16px;font-weight:700;color:#fff;background:#2f7d4f;border:0;border-radius:10px;min-height:46px;margin:6px 0 4px;cursor:pointer}</style>';
@@ -611,6 +612,13 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       b.parentNode.insertBefore(g, b.nextSibling);
     });
     // 每個「標題 1」一頁：上方按鈕切換（像原本協作平台的選單），下方可以按「下一頁」
+    // 文件裡寫「【發文工具】」的那一行 → 換成發文工具按鈕
+    Array.prototype.forEach.call(sh.querySelectorAll('p'), function(p){
+      if (p.textContent.replace(/\s/g, '') !== '【發文工具】') return;
+      var g = document.createElement('button'); g.className = 'cpy'; g.style.background = '#8a6d43'; g.textContent = '✍️ 打開發文工具（自動帶入這趟資料）';
+      g.onclick = function(){ location.href = 'https://liff.line.me/' + LIFF_ID + '?p=post'; };
+      p.parentNode.replaceChild(g, p);
+    });
     var nav = document.getElementById('lnav'), wrapEl = sh.querySelector('.doc-content') || sh, pages = [], cur = null;
     var kids = Array.prototype.slice.call((sh.querySelector('h1') || {}).parentNode ? sh.querySelector('h1').parentNode.childNodes : []);
     kids.forEach(function(n){ if (n.nodeType === 1 && n.tagName === 'H1' && n.textContent.trim()){ cur = document.createElement('section'); cur.className = 'pg'; n.parentNode.insertBefore(cur, n); pages.push({ t: n.textContent.trim(), el: cur }); } if (cur && n.nodeType === 1 && n.tagName !== 'STYLE') cur.appendChild(n); });
