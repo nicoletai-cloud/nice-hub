@@ -109,7 +109,7 @@ a{color:var(--accent)}
     var ctl=('AbortController' in window)?new AbortController():null, timer=setTimeout(function(){ctl&&ctl.abort()},30000);
     return fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body),signal:ctl?ctl.signal:undefined,cache:'no-store'})
       .then(function(r){return r.json()}).then(function(j){clearTimeout(timer); if(!j||!j.ok) throw new Error((j&&j.error)||'讀取失敗'); return j})
-      .catch(function(e){clearTimeout(timer); var m=String(e&&e.message||e); if(/abort/i.test(m)) m='連線逾時，請再按一次重新整理'; if(/action|不支援|unknown/i.test(m)) m='後台還沒部署新版本（Apps Script → 部署 → 新版本）'; throw new Error(m)});
+      .catch(function(e){clearTimeout(timer); var m=String(e&&e.message||e); if(/abort/i.test(m)) m='連線逾時，請再按一次重新整理'; if(/action|不支援|unknown|引數不能為空值|Cannot be null/i.test(m)) m='後台還沒部署新版本：請到 Apps Script 按「部署 → 管理部署作業 → 鉛筆 → 新版本」，再回來按重新整理'; throw new Error(m)});
   }
   function pad(n){return n<10?'0'+n:''+n}
   function today(){var d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
