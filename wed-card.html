@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>禮車車卡｜禮車助手</title>
+<meta name="description" content="填寫禮車車卡，之後派車不用再填資料。">
+<meta property="og:title" content="禮車車卡｜禮車助手">
+<meta property="og:description" content="填寫禮車車卡，之後派車不用再填資料。">
 <style>
 :root{--bg:#f8f5f0;--surface:#fff;--fg:#2f2a24;--muted:#7a7066;--line:#e4dbce;--accent:#8a6d43;--accent-ink:#fff;--warn:#b4532a;--warn-soft:#fbeee6;--ok:#2f7d4f;--ok-soft:#e8f4ec}
 @media (prefers-color-scheme:dark){:root{--bg:#1d1a17;--surface:#26221e;--fg:#f1ebe3;--muted:#b3a899;--line:#3b352e;--accent:#c9a46b;--accent-ink:#1d1a17;--warn:#f0a07a;--warn-soft:#3a2a22;--ok:#7fc79a;--ok-soft:#1f3328}}
@@ -417,7 +420,15 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
         $('doneTitle').textContent = kind === 'new' ? '綁定完成' : kind === 'car' ? '已增加支援車輛' : '車卡已更新';
         $('doneMsg').textContent = kind === 'new' ? '謝謝！之後派車不用再填資料。\n有第二台車的話，按下面「增加支援車輛」。\n車子或電話有變，再打開這個表單修改就好。' : kind === 'car' ? '謝謝！這台車已經加進你的車卡。' : '資料已更新，謝謝！';
         $('doneMsg').textContent += missTxt();
-        try { if (liff.isInClient()) liff.sendMessages([{ type: 'text', text: kind === 'new' ? '✅ 禮車車卡已送出' : kind === 'car' ? '✅ 已增加支援車輛：' + val('plate').toUpperCase() : '✅ 禮車車卡已更新' }]).catch(function(){}); } catch (x) {}
+        try { if (liff.isInClient()){
+          var msgs = [{ type: 'text', text: kind === 'new' ? '✅ 禮車車卡已送出' : kind === 'car' ? '✅ 已增加支援車輛：' + val('plate').toUpperCase() : '✅ 禮車車卡已更新' }];
+          var miss = []; if (!photos.length) miss.push('車輛外觀照片'); if (!ins.length) miss.push('保險單');
+          // 缺照片：由司機自己的 LINE 傳出提醒卡（不佔官方帳號訊息數），之後點按鈕就能回來補
+          if (miss.length) msgs.push({ type: 'template', altText: '📎 待補：' + miss.join('、'), template: { type: 'buttons',
+            text: ('📎 ' + [brandText(), val('model'), val('plate').toUpperCase()].filter(Boolean).join(' ') + ' 待補：' + miss.join('、')).slice(0, 160),
+            actions: [{ type: 'uri', label: '補上傳照片', uri: 'https://liff.line.me/' + LIFF_ID + '?car=' + encodeURIComponent(cid) + '&to=photos' }] } });
+          liff.sendMessages(msgs).catch(function(){ if (msgs.length > 1) liff.sendMessages([msgs[0]]).catch(function(){}); });
+        } } catch (x) {}
       })
       .catch(function(err){ $('srvErr').hidden = false; $('srvErr').textContent = err.message || String(err); })
       .then(function(){ $('go').disabled = false; $('go').textContent = goLabel; });
