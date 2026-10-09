@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>司機資料總表</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#A9793B">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+/* NWC UI v1 · 與禮車／機場工具共用的色票與字型 */
+:root{
+  --bg:#FBF6F1; --surface:#FFFFFF; --surface-2:#F6ECE1; --fg:#3A2E24; --muted:#75665A; --line:#E8DBCB;
+  --accent:#A9793B; --accent-ink:#FFFFFF; --accent-soft:#F3E6D6; --ok:#4F7A4A; --ok-soft:#E4EEDF; --warn:#B5652B; --warn-soft:#F7E4D3; --bad:#A33A2F; --bad-soft:#F6DEDA;
+  --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --f-label:"Montserrat","Noto Sans TC","PingFang TC",sans-serif;
+  --c-air:#2F6F8F; --c-wed:#B8323A;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#1D1916; --surface:#26211D; --surface-2:#2F2823; --fg:#EFE4DA; --muted:#A8988A; --line:#3D342D;
+  --accent:#CFA163; --accent-ink:#1D1916; --accent-soft:#3A2E22; --ok:#8DB886; --ok-soft:#24301F; --warn:#E09A62; --warn-soft:#3F2C1D; --bad:#E58A80; --bad-soft:#3F2220; --c-air:#6FB1D1; --c-wed:#E58A8F; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1D1916; --surface:#26211D; --surface-2:#2F2823; --fg:#EFE4DA; --muted:#A8988A; --line:#3D342D;
+  --accent:#CFA163; --accent-ink:#1D1916; --accent-soft:#3A2E22; --ok:#8DB886; --ok-soft:#24301F; --warn:#E09A62; --warn-soft:#3F2C1D; --bad:#E58A80; --bad-soft:#3F2220; --c-air:#6FB1D1; --c-wed:#E58A8F; color-scheme:dark}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:18px;line-height:1.55}
+.wrap{max-width:1000px;margin:0 auto;padding:18px max(16px,env(safe-area-inset-left)) calc(48px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-right))}
+header.top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding-bottom:12px}
+.brand{margin-right:auto}
+.brand b{display:block;font-size:28px;color:var(--accent);letter-spacing:.06em;font-weight:700}
+.brand span{font-family:var(--f-label);font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+a.back{font-size:15px;color:var(--muted);text-decoration:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 13px;white-space:nowrap}
+a.back:hover{border-color:var(--accent);color:var(--accent)}
+.tabs{display:flex;gap:8px;margin:4px 0 14px}
+.tab{flex:1;font:700 19px var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:10px;padding:10px 12px;cursor:pointer}
+.tab[aria-selected="true"]{color:var(--accent-ink);border-color:transparent}
+.tab[data-t="wed"][aria-selected="true"]{background:var(--c-wed)}
+.tab[data-t="air"][aria-selected="true"]{background:var(--c-air)}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-bottom:12px;font-size:15px;color:var(--muted)}
+.bar .st{flex:1;min-width:150px}
+.bar .st.err{color:var(--warn)}
+.btn{font:500 16px var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:8px;padding:7px 13px;min-height:38px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+.btn:focus-visible,.tab:focus-visible,.chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input.q{font:inherit;font-size:17px;width:100%;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:10px;padding:10px 13px;margin-bottom:10px}
+input.q:focus{outline:2px solid var(--accent);outline-offset:1px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.chip{font:500 15px var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:5px 12px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chip b{font-variant-numeric:tabular-nums}
+.list{display:grid;gap:10px}
+details.d{background:var(--surface);border:1px solid var(--line);border-radius:10px}
+details.d[open]{border-color:var(--accent)}
+details.d>summary{list-style:none;cursor:pointer;padding:12px 14px;display:grid;gap:4px}
+details.d>summary::-webkit-details-marker{display:none}
+.row1{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.nm{font-size:20px;font-weight:700}
+.ph{font-size:15px;color:var(--muted);font-variant-numeric:tabular-nums}
+.sub{font-size:15px;color:var(--muted)}
+.tags{display:flex;flex-wrap:wrap;gap:5px}
+.tg{font-size:13.5px;border-radius:6px;padding:1px 8px;background:var(--surface-2);color:var(--fg);white-space:nowrap}
+.tg.ok{background:var(--ok-soft);color:var(--ok)}
+.tg.warn{background:var(--warn-soft);color:var(--warn)}
+.tg.bad{background:var(--bad-soft);color:var(--bad)}
+.body{border-top:1px solid var(--line);padding:10px 14px 14px;font-size:15.5px}
+.car{background:var(--surface-2);border-radius:8px;padding:9px 11px;margin-bottom:8px}
+.car h4{margin:0 0 4px;font-size:16.5px}
+dl.kv{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin:0}
+dl.kv dt{color:var(--muted);white-space:nowrap}
+dl.kv dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.sec{font-weight:700;font-size:15px;margin:10px 0 4px;color:var(--muted)}
+a{color:var(--accent)}
+.empty{color:var(--muted);text-align:center;padding:30px 10px;background:var(--surface);border:1px dashed var(--line);border-radius:10px}
+.note{margin-top:16px;font-size:14px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><span>Driver cards</span><b>司機資料總表</b></div>
+    <a class="back" id="back" href="https://nicoletai-cloud.github.io/nice-hub/">‹ 回入口</a>
+  </header>
+  <div class="tabs" role="tablist">
+    <button type="button" class="tab" role="tab" data-t="wed" aria-selected="true">禮車</button>
+    <button type="button" class="tab" role="tab" data-t="air" aria-selected="false">機場接送</button>
+  </div>
+  <div class="bar"><span class="st" id="st">讀取中…</span><button type="button" class="btn" id="refresh">重新整理</button><button type="button" class="btn" id="csv">下載 CSV</button></div>
+  <input class="q" id="q" type="search" placeholder="搜尋姓名、手機、車牌、車款、地區" autocomplete="off">
+  <div class="chips" id="chips"></div>
+  <div class="list" id="list"></div>
+  <p class="note" id="note"></p>
+</div>
+<script>
+(function(){
+  'use strict';
+  var KEY_URL='hhlc_bot_url', KEY_TOKEN='hhlc_bot_token', KEY_TAB='nwc_cards_tab';
+  function $(id){return document.getElementById(id)}
+  function ls(k){try{return localStorage.getItem(k)||''}catch(e){return ''}}
+  function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+  function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function botUrl(){var u=String(ls(KEY_URL)||'').trim(); if(!u) return ''; u=u.split('?')[0].split('#')[0]; return /^https:\/\/script\.google\.com\/macros\/s\/[^\/]+\/exec$/.test(u)?u:''}
+  function post(body){
+    var url=botUrl(), token=String(ls(KEY_TOKEN)||'').trim();
+    if(!url||!token) return Promise.reject(new Error('尚未連線：請先在機場工具「派車機器人連線」填好網址與金鑰'));
+    body.token=token;
+    var ctl=('AbortController' in window)?new AbortController():null, timer=setTimeout(function(){ctl&&ctl.abort()},30000);
+    return fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body),signal:ctl?ctl.signal:undefined,cache:'no-store'})
+      .then(function(r){return r.json()}).then(function(j){clearTimeout(timer); if(!j||!j.ok) throw new Error((j&&j.error)||'讀取失敗'); return j})
+      .catch(function(e){clearTimeout(timer); var m=String(e&&e.message||e); if(/abort/i.test(m)) m='連線逾時，請再按一次重新整理'; if(/action|不支援|unknown/i.test(m)) m='後台還沒部署新版本（Apps Script → 部署 → 新版本）'; throw new Error(m)});
+  }
+  function pad(n){return n<10?'0'+n:''+n}
+  function today(){var d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+  function ymd(t){if(!t) return ''; var d=new Date(t); return d.getFullYear()+'/'+pad(d.getMonth()+1)+'/'+pad(d.getDate())}
+  function isDate(v){return /^\d{4}-\d{2}-\d{2}$/.test(String(v||''))}
+  function sl(v){return String(v||'').replace(/-/g,'/')}
+  function days(v){return Math.round((new Date(v+'T00:00:00')-new Date(today()+'T00:00:00'))/864e5)}
+  /* 到期日標籤：已過期／30 天內／正常／讀不到 */
+  function expTag(label,v){
+    if(v==='none') return '<span class="tg">'+esc(label)+' 無期限</span>';
+    if(!isDate(v)) return '<span class="tg warn">'+esc(label)+' 日期待確認</span>';
+    var n=days(v);
+    if(n<0) return '<span class="tg bad">⛔'+esc(label)+' 已過期 '+sl(v)+'</span>';
+    if(n<=30) return '<span class="tg warn">'+esc(label)+' 剩 '+n+' 天（'+sl(v)+'）</span>';
+    return '<span class="tg ok">'+esc(label)+' 至 '+sl(v)+'</span>';
+  }
+  function expBad(v){return isDate(v)&&days(v)<0}
+  function expSoon(v){return isDate(v)&&days(v)>=0&&days(v)<=30}
+
+  var data=null, tab='wed', filter='all', busy=false;
+  var CACHE='nwc_cards_cache';
+  try{data=JSON.parse(ls(CACHE)||'null')}catch(e){data=null}
+  var qs=new URLSearchParams(location.search); tab=qs.get('t')==='air'?'air':qs.get('t')==='wed'?'wed':(ls(KEY_TAB)==='air'?'air':'wed');
+  if(qs.get('from')==='wed') $('back').href='https://nicoletai-cloud.github.io/nice-wedding-procession/', $('back').textContent='‹ 回禮車工具';
+  if(qs.get('from')==='air') $('back').href='https://nicoletai-cloud.github.io/nice-wedding-car/', $('back').textContent='‹ 回機場工具';
+
+  /* ---- 禮車 ---- */
+  function wedIns(c){var e=c.exp||{}; return [e.ins1,e.ins2]}
+  function wedFlags(r){
+    var f={miss:false,bad:false,soon:false,deco:/車頭彩/.test(r.tools||'')};
+    (r.cars||[]).forEach(function(c){ if(!c.photos||!c.ins) f.miss=true; wedIns(c).forEach(function(v){ if(expBad(v)) f.bad=true; if(expSoon(v)) f.soon=true; if(c.ins&&!isDate(v)) f.miss=true; }); });
+    if(f.deco&&!r.deco) f.miss=true;
+    return f;
+  }
+  function wedText(r){return [r.name,r.phone,r.area,r.serve,(r.cars||[]).map(function(c){return [c.brand,c.model,c.plate,c.color].join(' ')}).join(' ')].join(' ').toLowerCase()}
+  function wedHtml(r){
+    var f=wedFlags(r), cars=r.cars||[];
+    var head='<div class="row1"><span class="nm">'+esc(r.name)+'</span><span class="ph">'+esc(r.phone)+'</span>'+(r.zodiac?'<span class="sub">屬'+esc(r.zodiac)+'</span>':'')+'</div>'+
+      '<div class="sub">'+esc(cars.map(function(c){return [c.brand,c.model,c.plate].filter(Boolean).join(' ')}).join('｜')||'（沒有車）')+'</div>'+
+      '<div class="tags">'+(f.bad?'<span class="tg bad">⛔保險過期</span>':'')+(f.soon&&!f.bad?'<span class="tg warn">保險快到期</span>':'')+(f.miss?'<span class="tg warn">📎待補</span>':'')+(!f.bad&&!f.soon&&!f.miss?'<span class="tg ok">✅資料齊全</span>':'')+
+      (r.serve?'<span class="tg">可服務：'+esc(r.serve)+'</span>':'')+(f.deco?'<span class="tg">有車頭彩</span>':'')+'</div>';
+    var body=cars.map(function(c){var e=c.exp||{};
+      return '<div class="car"><h4>'+esc([c.brand,c.model,c.spec].filter(Boolean).join(' '))+'　'+esc(c.plate)+'</h4><div class="tags" style="margin-bottom:6px">'+expTag('強制險',e.ins1)+expTag('任意險',e.ins2)+'</div><dl class="kv">'+
+        kv('出廠',sl(c.year))+kv('牌照',c.plateType)+kv('座位',c.seats?c.seats+' 人座':'')+kv('車色',c.color)+kv('內裝',c.interior)+kv('菸',c.smoke)+
+        kv('包膜',c.wrap?'有'+(c.wrapNote?'（'+c.wrapNote+'）':''):'無')+kv('改裝',c.mod?'有'+(c.modNote?'（'+c.modNote+'）':''):'無')+
+        kv('照片',(c.photos||0)+' 張外觀、'+(c.ins||0)+' 份保險單')+'</dl></div>'}).join('');
+    body+='<div class="sec">司機</div><dl class="kv">'+kv('居住地區',r.area)+kv('可服務地區',r.serve)+kv('可接案時段',r.slots)+
+      kv('緊急聯絡人',[r.em&&r.em.name,r.em&&r.em.rel?'（'+r.em.rel+'）':'',r.em&&r.em.phone].filter(Boolean).join(' '))+
+      kv('禮車經驗',r.wexp)+kv('專長',r.skills)+kv('工具',r.tools+(f.deco?'（車頭彩照片 '+(r.deco||0)+' 張）':''))+kv('對講機',r.radios?r.radios+' 支':'')+
+      kv('LINE 名稱',r.disp)+kv('最後更新',ymd(r.upd||r.savedAt))+'</dl>'+
+      (r.folder?'<p style="margin:10px 0 0"><a href="'+esc(r.folder)+'" target="_blank" rel="noopener">開 Google 雲端資料夾（照片、保險單）</a></p>':'');
+    return '<details class="d"><summary>'+head+'</summary><div class="body">'+body+'</div></details>';
+  }
+  /* ---- 機場 ---- */
+  var AEXP={lic:'駕照',reg:'行照',ins1:'強制險',ins2:'任意險'};
+  function airFlags(r){var d=r.docs||{},e=d.exp||{},f={unbound:!r.bound,miss:!!((d.miss||[]).length||(d.expMiss||[]).length),bad:false,soon:false};
+    Object.keys(AEXP).forEach(function(k){ if(expBad(e[k])) f.bad=true; if(expSoon(e[k])) f.soon=true; }); return f}
+  function airText(r){return [r.name,r.phone,r.car,r.plate,r.area].join(' ').toLowerCase()}
+  function airHtml(r){
+    var f=airFlags(r), d=r.docs||{}, e=d.exp||{}, b=r.bank||{}, em=r.em||{};
+    var head='<div class="row1"><span class="nm">'+esc(r.name)+'</span><span class="ph">'+esc(r.phone)+'</span></div>'+
+      '<div class="sub">'+esc([r.car,r.plate,r.color,r.seats?r.seats+'人座':''].filter(Boolean).join('　')||'（還沒填車卡）')+'</div>'+
+      '<div class="tags">'+(f.unbound?'<span class="tg warn">未綁定</span>':'<span class="tg ok">已綁定</span>')+(f.bad?'<span class="tg bad">⛔證件過期</span>':'')+(f.soon&&!f.bad?'<span class="tg warn">證件快到期</span>':'')+(f.miss?'<span class="tg warn">📎待補</span>':'')+
+      (r.area?'<span class="tg">'+esc(r.area)+'</span>':'')+'</div>';
+    var n=d.n||{};
+    var body='<div class="tags" style="margin-bottom:8px">'+Object.keys(AEXP).map(function(k){return expTag(AEXP[k],e[k])}).join('')+'</div><dl class="kv">'+
+      kv('居住地區',r.area)+kv('車款',r.car)+kv('車牌',r.plate)+kv('車色',r.color)+kv('座位',r.seats?r.seats+' 人座':'')+
+      kv('證件',(n.licF||0)+' 駕照、'+(n.regF||0)+' 行照、'+(n.ins||0)+' 保險單、'+(n.car||0)+' 車輛照片'+((d.miss||[]).length?'（缺 '+d.miss.join('、')+'）':''))+
+      kv('緊急聯絡人',[em.rel,em.phone].filter(Boolean).join(' '))+kv('收款帳戶',[b.bank,b.acct,b.holder].filter(Boolean).join(' '))+
+      kv('綁定時間',ymd(r.boundAt))+kv('最後更新',ymd(r.updatedAt))+'</dl>'+
+      (d.folder?'<p style="margin:10px 0 0"><a href="'+esc(d.folder)+'" target="_blank" rel="noopener">開 Google 雲端資料夾（證件）</a></p>':'');
+    return '<details class="d"><summary>'+head+'</summary><div class="body">'+body+'</div></details>';
+  }
+  function kv(k,v){v=String(v==null?'':v).trim(); return v?'<dt>'+esc(k)+'</dt><dd>'+esc(v)+'</dd>':''}
+
+  var FILTERS={
+    wed:[['all','全部',function(){return true}],['need','需要處理',function(r){var f=wedFlags(r);return f.bad||f.soon||f.miss}],['bad','保險過期',function(r){return wedFlags(r).bad}],['deco','有車頭彩',function(r){return wedFlags(r).deco}]],
+    air:[['all','全部',function(){return true}],['need','需要處理',function(r){var f=airFlags(r);return f.unbound||f.bad||f.soon||f.miss}],['bad','證件過期',function(r){return airFlags(r).bad}],['unbound','未綁定',function(r){return !r.bound}]]
+  };
+  function rows(){return ((data&&data[tab])||[]).slice().sort(function(a,b){return String(a.name).localeCompare(String(b.name),'zh-Hant')})}
+  function render(){
+    document.querySelectorAll('.tab').forEach(function(t){t.setAttribute('aria-selected',String(t.getAttribute('data-t')===tab))});
+    var all=rows(), F=FILTERS[tab]; if(!F.some(function(x){return x[0]===filter})) filter='all';
+    $('chips').innerHTML=F.map(function(x){return '<button type="button" class="chip" data-f="'+x[0]+'" aria-pressed="'+(x[0]===filter)+'">'+x[1]+' <b>'+all.filter(x[2]).length+'</b></button>'}).join('');
+    var fn=F.filter(function(x){return x[0]===filter})[0][2], q=$('q').value.trim().toLowerCase();
+    var L=all.filter(fn).filter(function(r){return !q||(tab==='wed'?wedText(r):airText(r)).indexOf(q)>=0});
+    $('list').innerHTML=L.length?L.map(tab==='wed'?wedHtml:airHtml).join(''):'<div class="empty">'+(data?(all.length?'沒有符合的司機':(tab==='wed'?'還沒有司機在禮車助手填車卡':'還沒有機場司機資料')):'還沒讀到資料')+'</div>';
+    $('note').textContent=tab==='wed'?'資料來源：禮車助手車卡（司機自己填、自己更新）。司機總表試算表只當參考。':'資料來源：司機回報平台車卡與證件。';
+  }
+  function load(){
+    if(busy) return; busy=true; $('st').classList.remove('err'); $('st').textContent=data?'更新中…':'讀取中…';
+    post({action:'cardsAll'}).then(function(j){data={wed:j.wed||[],air:j.air||[],ts:Date.now()}; lsSet(CACHE,JSON.stringify(data)); $('st').textContent='禮車 '+data.wed.length+' 位、機場 '+data.air.length+' 位｜'+new Date().toTimeString().slice(0,5)+' 更新'; render()})
+      .catch(function(e){$('st').classList.add('err'); $('st').textContent=e.message+(data&&data.ts?'（顯示 '+ymd(data.ts)+' 的舊資料）':''); render()})
+      .then(function(){busy=false});
+  }
+  function csv(){
+    var L=rows(), H, R;
+    if(tab==='wed'){ H=['姓名','手機','生肖','居住地區','可服務地區','可接案時段','緊急聯絡人','關係','緊急電話','廠牌','車款','規格','出廠年月','車牌','牌照','座位','車色','內裝','菸','包膜','改裝','外觀照片','保險單','強制險到期','任意險到期','禮車經驗','專長','工具','車頭彩照片','對講機','資料夾'];
+      R=[]; L.forEach(function(r){(r.cars&&r.cars.length?r.cars:[{}]).forEach(function(c){var e=c.exp||{},em=r.em||{};R.push([r.name,r.phone,r.zodiac,r.area,r.serve,r.slots,em.name,em.rel,em.phone,c.brand,c.model,c.spec,c.year,c.plate,c.plateType,c.seats,c.color,c.interior,c.smoke,c.wrap?'有 '+(c.wrapNote||''):'無',c.mod?'有 '+(c.modNote||''):'無',c.photos,c.ins,e.ins1,e.ins2,r.wexp,r.skills,r.tools,r.deco,r.radios,r.folder])})}); }
+    else { H=['姓名','手機','綁定','居住地區','車款','車牌','車色','座位','駕照到期','行照到期','強制險到期','任意險到期','缺件','緊急聯絡關係','緊急電話','銀行','帳號','戶名','資料夾'];
+      R=L.map(function(r){var d=r.docs||{},e=d.exp||{},b=r.bank||{},em=r.em||{};return [r.name,r.phone,r.bound?'已綁定':'未綁定',r.area,r.car,r.plate,r.color,r.seats,e.lic,e.reg,e.ins1,e.ins2,(d.miss||[]).join('、'),em.rel,em.phone,b.bank,b.acct,b.holder,d.folder]}); }
+    var s='﻿'+[H].concat(R).map(function(row){return row.map(function(v){v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}).join(',')}).join('\r\n');
+    var a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([s],{type:'text/csv;charset=utf-8'})); a.download=(tab==='wed'?'禮車司機資料':'機場司機資料')+'_'+today()+'.csv'; document.body.appendChild(a); a.click(); setTimeout(function(){URL.revokeObjectURL(a.href); a.remove()},500);
+  }
+  document.querySelector('.tabs').addEventListener('click',function(e){var t=e.target.closest('.tab'); if(!t) return; tab=t.getAttribute('data-t'); lsSet(KEY_TAB,tab); filter='all'; render()});
+  $('chips').addEventListener('click',function(e){var c=e.target.closest('.chip'); if(!c) return; filter=c.getAttribute('data-f'); render()});
+  $('q').addEventListener('input',render);
+  $('refresh').addEventListener('click',load);
+  $('csv').addEventListener('click',csv);
+  render(); load();
+})();
+</script>
+</body>
+</html>
