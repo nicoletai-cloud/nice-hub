@@ -23,6 +23,7 @@ label small{font-weight:400;color:var(--muted);margin-left:6px}
 input{font:inherit;font-size:18px;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;min-height:48px;width:100%}
 input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
 input[readonly]{background:transparent;color:var(--muted)}
+textarea{font:inherit;font-size:16px;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;width:100%;min-height:90px;resize:vertical}
 input.bad{border-color:var(--warn);background:var(--warn-soft)}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{font:inherit;font-size:15px;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 14px;min-height:38px;cursor:pointer}
@@ -100,6 +101,15 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       <div class="chips" id="zodiacChips"></div>
       <div class="err" id="e-zodiac"></div>
     </div>
+    <div class="field">
+      <label>可服務地區<small>可以接案的縣市，可複選；酬勞依地區行情，請依真實意願選</small></label>
+      <div class="chips" data-pick="serve" data-multi="1"></div>
+      <div class="err" id="e-serve"></div>
+    </div>
+    <div class="field">
+      <label>可接案時段<small>可複選</small></label>
+      <div class="chips" data-pick="slots" data-multi="1" data-opts="平日|假日"></div>
+    </div>
     <div class="sec">緊急聯絡人<small>只有在禮車出發時間沒有回報、聯絡不到你時才會用到，平時不會聯絡</small></div>
     <div class="field">
       <label for="emName">稱呼</label>
@@ -116,6 +126,23 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       <div class="chips" data-for="emRel"><button type="button" class="chip">配偶</button><button type="button" class="chip">父母</button><button type="button" class="chip">兄弟姊妹</button><button type="button" class="chip">朋友</button></div>
       <input id="emRel" maxlength="10" placeholder="點上面選，或自己填" required>
       <div class="err" id="e-emRel"></div>
+    </div>
+    <div class="sec">經驗與配備<small>選填，有填比較容易媒合到適合的案子</small></div>
+    <div class="field">
+      <label for="wexp">禮車經驗<small>簡述經驗或次數（前導車／主禮車／伴娘車）</small></label>
+      <textarea id="wexp" maxlength="300" placeholder="例：主禮車約 20 次、前導車 5 次"></textarea>
+    </div>
+    <div class="field">
+      <label>相關經驗或專長<small>可複選</small></label>
+      <div class="chips" data-pick="skills" data-multi="1" data-opts="攝影（會操作單眼／手機構圖好）|影片剪輯（IG／YouTube／婚禮精華）|熟悉婚禮流程（迎娶、送客、禮俗）|曾參與婚禮工作（婚顧、婚攝、新秘等）|從事服務業（飯店、空服、銷售、導覽等）|高級駕駛技巧（受過訓練或跑過賽道）|熟悉車輛保養與清潔|擅長溝通與客戶應對"></div>
+    </div>
+    <div class="field">
+      <label>備有工具<small>可複選</small></label>
+      <div class="chips" data-pick="tools" data-multi="1" data-opts="車頭彩|門把彩|甘蔗固定器"></div>
+    </div>
+    <div class="field">
+      <label>對講機數量</label>
+      <div class="chips" data-pick="radios" data-opts="0|1|2|3|4|5|6"></div>
     </div>
     <div class="sec">車輛資料<small>有兩台以上的車，可以按「增加支援車輛」一台一台加</small></div>
     <div class="chips" id="carPick" hidden></div>
@@ -134,6 +161,10 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       <div class="err" id="e-model"></div>
     </div>
     <div class="field">
+      <label for="spec">車輛規格<small>選填，例：SR、LR、100D</small></label>
+      <input id="spec" maxlength="20" placeholder="沒有可以不填">
+    </div>
+    <div class="field">
       <label for="year">出廠日期<small>請以行照上的出廠日期為主</small></label>
       <input id="year" type="date" min="1990-01-01" required>
       <div class="err" id="e-year"></div>
@@ -142,6 +173,11 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       <label for="plate">車牌<small>例：RED-7380</small></label>
       <input id="plate" autocapitalize="characters" maxlength="10" required>
       <div class="err" id="e-plate"></div>
+    </div>
+    <div class="field">
+      <label>牌照類型</label>
+      <div class="chips" data-pick="plateType" data-opts="個人牌照|R 牌短租|R 牌長租|多元牌照"></div>
+      <div class="err" id="e-plateType"></div>
     </div>
     <div class="field">
       <label for="seats">座位數<small>含司機</small></label>
@@ -153,9 +189,19 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     </div>
     <div class="field">
       <label for="color">車色</label>
-      <div class="chips" data-for="color"><button type="button" class="chip">黑色</button><button type="button" class="chip">白色</button><button type="button" class="chip">紅色</button></div>
+      <div class="chips" data-for="color"><button type="button" class="chip">黑色</button><button type="button" class="chip">白色</button><button type="button" class="chip">紅色</button><button type="button" class="chip">消光黑</button><button type="button" class="chip">消光白</button></div>
       <input id="color" maxlength="10" placeholder="其他顏色請直接輸入" required>
       <div class="err" id="e-color"></div>
+    </div>
+    <div class="field">
+      <label>內裝顏色</label>
+      <div class="chips" data-pick="interior" data-opts="黑內裝|白內裝|其他"></div>
+      <div class="err" id="e-interior"></div>
+    </div>
+    <div class="field">
+      <label>無菸車／有菸車</label>
+      <div class="chips" data-pick="smoke" data-opts="無菸車|有菸車"></div>
+      <div class="err" id="e-smoke"></div>
     </div>
     <div class="field">
       <label>包膜</label>
@@ -208,6 +254,19 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   // 居住地區：縣市複選 → 每個縣市再選地區（可複選）
   var TW = {"台北市":["中正區","大同區","中山區","松山區","大安區","萬華區","信義區","士林區","北投區","內湖區","南港區","文山區"],"新北市":["板橋區","三重區","中和區","永和區","新莊區","新店區","樹林區","鶯歌區","三峽區","淡水區","汐止區","瑞芳區","土城區","蘆洲區","五股區","泰山區","林口區","深坑區","石碇區","坪林區","三芝區","石門區","八里區","平溪區","雙溪區","貢寮區","金山區","萬里區","烏來區"],"基隆市":["仁愛區","信義區","中正區","中山區","安樂區","暖暖區","七堵區"],"桃園市":["桃園區","中壢區","平鎮區","八德區","楊梅區","蘆竹區","大溪區","龍潭區","龜山區","大園區","觀音區","新屋區","復興區"],"新竹市":["東區","北區","香山區"],"新竹縣":["竹北市","竹東鎮","新埔鎮","關西鎮","湖口鄉","新豐鄉","芎林鄉","橫山鄉","北埔鄉","寶山鄉","峨眉鄉","尖石鄉","五峰鄉"],"苗栗縣":["苗栗市","頭份市","竹南鎮","後龍鎮","通霄鎮","苑裡鎮","卓蘭鎮","造橋鄉","西湖鄉","頭屋鄉","公館鄉","銅鑼鄉","三義鄉","大湖鄉","獅潭鄉","三灣鄉","南庄鄉","泰安鄉"],"台中市":["中區","東區","南區","西區","北區","北屯區","西屯區","南屯區","太平區","大里區","霧峰區","烏日區","豐原區","后里區","石岡區","東勢區","和平區","新社區","潭子區","大雅區","神岡區","大肚區","沙鹿區","龍井區","梧棲區","清水區","大甲區","外埔區","大安區"],"彰化縣":["彰化市","員林市","和美鎮","鹿港鎮","溪湖鎮","二林鎮","田中鎮","北斗鎮","花壇鄉","芬園鄉","大村鄉","永靖鄉","伸港鄉","線西鄉","福興鄉","秀水鄉","埔心鄉","埔鹽鄉","大城鄉","芳苑鄉","竹塘鄉","社頭鄉","二水鄉","田尾鄉","埤頭鄉","溪州鄉"],"南投縣":["南投市","埔里鎮","草屯鎮","竹山鎮","集集鎮","名間鄉","鹿谷鄉","中寮鄉","魚池鄉","國姓鄉","水里鄉","信義鄉","仁愛鄉"],"雲林縣":["斗六市","斗南鎮","虎尾鎮","西螺鎮","土庫鎮","北港鎮","古坑鄉","大埤鄉","莿桐鄉","林內鄉","二崙鄉","崙背鄉","麥寮鄉","東勢鄉","褒忠鄉","台西鄉","元長鄉","四湖鄉","口湖鄉","水林鄉"],"嘉義市":["東區","西區"],"嘉義縣":["太保市","朴子市","布袋鎮","大林鎮","民雄鄉","溪口鄉","新港鄉","六腳鄉","東石鄉","義竹鄉","鹿草鄉","水上鄉","中埔鄉","竹崎鄉","梅山鄉","番路鄉","大埔鄉","阿里山鄉"],"台南市":["中西區","東區","南區","北區","安平區","安南區","永康區","歸仁區","新化區","左鎮區","玉井區","楠西區","南化區","仁德區","關廟區","龍崎區","官田區","麻豆區","佳里區","西港區","七股區","將軍區","學甲區","北門區","新營區","後壁區","白河區","東山區","六甲區","下營區","柳營區","鹽水區","善化區","大內區","山上區","新市區","安定區"],"高雄市":["新興區","前金區","苓雅區","鹽埕區","鼓山區","旗津區","前鎮區","三民區","楠梓區","小港區","左營區","仁武區","大社區","岡山區","路竹區","阿蓮區","田寮區","燕巢區","橋頭區","梓官區","彌陀區","永安區","湖內區","鳳山區","大寮區","林園區","鳥松區","大樹區","旗山區","美濃區","六龜區","內門區","杉林區","甲仙區","桃源區","那瑪夏區","茂林區","茄萣區"],"屏東縣":["屏東市","潮州鎮","東港鎮","恆春鎮","萬丹鄉","長治鄉","麟洛鄉","九如鄉","里港鄉","鹽埔鄉","高樹鄉","萬巒鄉","內埔鄉","竹田鄉","新埤鄉","枋寮鄉","新園鄉","崁頂鄉","林邊鄉","南州鄉","佳冬鄉","琉球鄉","車城鄉","滿州鄉","枋山鄉","三地門鄉","霧台鄉","瑪家鄉","泰武鄉","來義鄉","春日鄉","獅子鄉","牡丹鄉"],"宜蘭縣":["宜蘭市","羅東鎮","蘇澳鎮","頭城鎮","礁溪鄉","壯圍鄉","員山鄉","冬山鄉","五結鄉","三星鄉","大同鄉","南澳鄉"],"花蓮縣":["花蓮市","鳳林鎮","玉里鎮","新城鄉","吉安鄉","壽豐鄉","光復鄉","豐濱鄉","瑞穗鄉","富里鄉","秀林鄉","萬榮鄉","卓溪鄉"],"台東縣":["台東市","成功鎮","關山鎮","卑南鄉","鹿野鄉","池上鄉","東河鄉","長濱鄉","太麻里鄉","大武鄉","綠島鄉","海端鄉","延平鄉","金峰鄉","達仁鄉","蘭嶼鄉"],"澎湖縣":["馬公市","湖西鄉","白沙鄉","西嶼鄉","望安鄉","七美鄉"],"金門縣":["金城鎮","金湖鎮","金沙鎮","金寧鄉","烈嶼鄉","烏坵鄉"],"連江縣":["南竿鄉","北竿鄉","莒光鄉","東引鄉"]};
   var area = {};  // 縣市 → [地區]
+  // 選項按鈕（data-pick）：單選或複選，存成「、」分隔文字
+  var PICK = {};
+  function pickOpts(k){ var box = document.querySelector('.chips[data-pick="' + k + '"]'); return k === 'serve' ? Object.keys(TW) : box.getAttribute('data-opts').split('|'); }
+  function drawPick(k){ document.querySelectorAll('.chips[data-pick="' + k + '"] .chip').forEach(function(c){ c.setAttribute('aria-pressed', String(PICK[k].indexOf(c.textContent) >= 0)); }); }
+  function pickText(k){ return pickOpts(k).filter(function(o){ return PICK[k].indexOf(o) >= 0; }).join('、'); }
+  function setPick(k, t){ t = String(t == null ? '' : t); PICK[k] = pickOpts(k).filter(function(o){ return t === o || ('、' + t + '、').indexOf('、' + o + '、') >= 0; }); drawPick(k); }
+  document.querySelectorAll('.chips[data-pick]').forEach(function(box){
+    var k = box.getAttribute('data-pick'), multi = box.getAttribute('data-multi') === '1'; PICK[k] = [];
+    box.innerHTML = pickOpts(k).map(function(o){ return '<button type="button" class="chip">' + o + '</button>'; }).join('');
+    box.addEventListener('click', function(e){ var c = e.target.closest('.chip'); if (!c) return; var v = c.textContent, i = PICK[k].indexOf(v);
+      if (multi){ if (i >= 0) PICK[k].splice(i, 1); else PICK[k].push(v); } else PICK[k] = i >= 0 ? [] : [v];
+      drawPick(k); var er = $('e-' + k); if (er) er.textContent = ''; });
+  });
   $('cityChips').innerHTML = Object.keys(TW).map(function(c){ return '<button type="button" class="chip">' + c + '</button>'; }).join('');
   function renderArea(){
     $('cityChips').querySelectorAll('.chip').forEach(function(c){ c.setAttribute('aria-pressed', String(!!area[c.textContent])); });
@@ -246,7 +305,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   $('brandOther').addEventListener('input', function(){ $('e-brand').textContent = ''; $('brandOther').classList.remove('bad'); });
   function brandText(){ return brand === '其他' ? val('brandOther') : brand; }
   // 車款：官網有標價的車款用按鈕選，沒有的選「其他」自己填
-  var MODEL_OPTS = {"Tesla": ["Model X", "Model S", "Model Y", "煥新 Model Y", "Model 3", "新款 Model 3"], "Benz": ["W205", "W212(改)", "W213", "W222(2013-2018)", "W222(改)(2018-2020)", "W223", "VITO", "G Car"], "BMW": ["F30", "F10", "F02", "G12", "G12(改)"], "Maserati": ["Ghibli", "Levante"], "Porsche": ["Panamera", "Macan"], "Bentley": ["舊款(2017)", "新款"], "Rolls-Royce": ["Ghost 古斯特", "Phantom 幻影"], "Lexus": ["LM 300h"], "Toyota": ["Alphard"]}, modelPick = '';
+  var MODEL_OPTS = {"Tesla": ["Model X", "Model S", "Model Y", "煥新 Model Y", "Model 3", "新款 Model 3"], "Benz": ["W205", "W212(改)", "W213", "W222(2013-2018)", "W222(改)(2018-2020)", "W223", "VITO", "G Car"], "BMW": ["F30", "F10", "F02", "G12", "G12(改)"], "Maserati": ["Ghibli", "Levante"], "Porsche": ["Panamera", "Macan", "911", "718 Cayman", "718 Boxster", "Cayenne", "Taycan"], "Bentley": ["舊款(2017)", "新款", "Continental"], "Rolls-Royce": ["Ghost 古斯特", "Phantom 幻影"], "Lexus": ["LM 300h", "ES", "LS", "RX"], "Toyota": ["Alphard"]}, modelPick = '';
   function modelSync(){
     var box = $('modelChips'), inp = $('model'), L = MODEL_OPTS[brand] || [], v = inp.value.trim();
     if (!L.length){ box.hidden = true; inp.hidden = false; modelPick = ''; return; }
@@ -321,7 +380,8 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     if (c.brand){ if (BRANDS.indexOf(c.brand) >= 0){ $('brandOther').value = ''; setBrand(c.brand); } else { setBrand('其他'); $('brandOther').value = c.brand; } }
     else { $('brandOther').value = ''; setBrand(''); }
     if (c.saved){ setYn('wrap', !!c.wrap); setYn('mod', !!c.mod); } else { setYn('wrap', null); setYn('mod', null); }
-    $('wrapNote').value = c.wrapNote || ''; $('modNote').value = c.modNote || '';
+    $('wrapNote').value = c.wrapNote || ''; $('modNote').value = c.modNote || ''; $('spec').value = c.spec || '';
+    ['plateType','interior','smoke'].forEach(function(k){ setPick(k, c[k]); $('e-' + k).textContent = ''; });
     ['brand','wrap','mod','photos','ins'].forEach(function(k){ $('e-' + k).textContent = ''; });
     photos = c.photos || []; ins = c.ins || []; renderPhotos(); renderCarPick();
   }
@@ -393,10 +453,14 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     if (!/^0\d{8,9}$/.test(emp)) errs.emPhone = '請填緊急聯絡人電話';
     else if (emp === phone) errs.emPhone = '請填別人的電話，不要填自己的';
     if (!val('emRel')) errs.emRel = '請選或填關係';
+    if (!PICK.serve.length) errs.serve = '請選可服務地區';
+    if (!PICK.plateType.length) errs.plateType = '請選牌照類型';
+    if (!PICK.interior.length) errs.interior = '請選內裝顏色';
+    if (!PICK.smoke.length) errs.smoke = '請選無菸或有菸';
     if (yn.wrap === null) errs.wrap = '請選有沒有包膜'; else if (yn.wrap && !val('wrapNote')) errs.wrap = '請簡單說明包膜內容';
     if (yn.mod === null) errs.mod = '請選有沒有改裝'; else if (yn.mod && !val('modNote')) errs.mod = '請簡單說明改裝內容';
     FIELDS.forEach(function(k){ $(k).classList.toggle('bad', !!errs[k]); $('e-' + k).textContent = errs[k] || ''; });
-    ['area','zodiac','brand','wrap','mod','photos','ins'].forEach(function(k){ $('e-' + k).textContent = errs[k] || ''; });
+    ['area','zodiac','serve','brand','plateType','interior','smoke','wrap','mod','photos','ins'].forEach(function(k){ $('e-' + k).textContent = errs[k] || ''; });
     var first = Object.keys(errs)[0];
     if (first){ var el = FIELDS.indexOf(first) >= 0 ? $(first) : $('e-' + first); if (FIELDS.indexOf(first) >= 0) el.focus(); el.scrollIntoView({ block: 'center' }); }
     return !first;
@@ -408,9 +472,11 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     if (!check()) return;
     $('go').disabled = true; $('go').textContent = '送出中…';
     post({ action: 'wedLiff', op: 'save', idToken: idToken, disp: disp, cid: cid,
-      person: { name: val('name'), phone: val('phone'), area: areaText(), zodiac: zodiac, emName: val('emName'), emPhone: val('emPhone'), emRel: val('emRel') },
+      person: { name: val('name'), phone: val('phone'), area: areaText(), zodiac: zodiac, emName: val('emName'), emPhone: val('emPhone'), emRel: val('emRel'),
+        serve: pickText('serve'), slots: pickText('slots'), skills: pickText('skills'), tools: pickText('tools'), radios: pickText('radios'), wexp: val('wexp') },
       car: { plate: val('plate').toUpperCase(), brand: brandText(), model: val('model'), year: val('year'), seats: val('seats'), color: val('color'),
-        wrap: yn.wrap, wrapNote: val('wrapNote'), mod: yn.mod, modNote: val('modNote') } })
+        wrap: yn.wrap, wrapNote: val('wrapNote'), mod: yn.mod, modNote: val('modNote'),
+        spec: val('spec'), plateType: pickText('plateType'), interior: pickText('interior'), smoke: pickText('smoke') } })
       .then(function(j){
         if (!j || !j.ok) throw new Error((j && j.error) || '送出失敗，請再試一次');
         if (!j.done){ $('srvErr').hidden = false; $('srvErr').textContent = j.msg || '資料有誤，請檢查後再送出'; return; }
@@ -452,6 +518,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     if (pp){
       ['name','phone','emName','emPhone','emRel'].forEach(function(k){ $(k).value = pp[k] || ''; if ($(k)._sync) $(k)._sync(); });
       areaLoad(pp.area);
+      ['serve','slots','skills','tools','radios'].forEach(function(k){ setPick(k, pp[k]); }); $('wexp').value = pp.wexp || '';
       if (pp.zodiac) setZodiac(pp.zodiac);
     }
     var Q = new URLSearchParams(location.search), qCar = Q.get('car') || '', qTo = Q.get('to') || '';
