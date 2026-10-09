@@ -597,7 +597,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       '*{max-width:100%!important;box-sizing:border-box}img{height:auto!important;max-width:280px!important;width:auto!important}span:has(>img){width:auto!important;height:auto!important}' +
       'p,li{line-height:1.65!important}h1{font-size:20px!important;margin:22px 0 6px!important;padding-top:10px!important;border-top:2px solid #c9a46b}h1:first-of-type{border-top:0;margin-top:0!important;padding-top:0!important}h2{font-size:17px!important}' +
       'table{width:100%!important;border-collapse:collapse!important;margin:8px 0!important}td{background:#fffbea!important;padding:10px!important}' +
-      '.cpy{display:block;width:100%;font:inherit;font-size:16px;font-weight:700;color:#fff;background:#2f7d4f;border:0;border-radius:10px;min-height:46px;margin:6px 0 4px;cursor:pointer}</style>';
+      'section.pg[hidden]{display:none}.cpy{display:block;width:100%;font:inherit;font-size:16px;font-weight:700;color:#fff;background:#2f7d4f;border:0;border-radius:10px;min-height:46px;margin:6px 0 4px;cursor:pointer}</style>';
     // 只有一格的表格 = 發文模板：加「複製」按鈕
     Array.prototype.forEach.call(sh.querySelectorAll('table'), function(t){
       var cells = t.querySelectorAll('td'); if (cells.length !== 1) return;
@@ -609,13 +609,19 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       g.onclick = function(){ location.href = 'https://liff.line.me/' + LIFF_ID + '?p=post'; };
       b.parentNode.insertBefore(g, b.nextSibling);
     });
-    var nav = document.getElementById('lnav');
-    Array.prototype.forEach.call(sh.querySelectorAll('h1'), function(h){
-      var t = h.textContent.trim(); if (!t) return;
-      var c = document.createElement('button'); c.className = 'chip'; c.textContent = t;
-      c.onclick = function(){ var y = h.getBoundingClientRect().top + window.scrollY - nav.offsetHeight - 6; window.scrollTo({ top: y, behavior: 'smooth' }); };
-      nav.appendChild(c);
-    });
+    // 每個「標題 1」一頁：上方按鈕切換（像原本協作平台的選單），下方可以按「下一頁」
+    var nav = document.getElementById('lnav'), wrapEl = sh.querySelector('.doc-content') || sh, pages = [], cur = null;
+    var kids = Array.prototype.slice.call((sh.querySelector('h1') || {}).parentNode ? sh.querySelector('h1').parentNode.childNodes : []);
+    kids.forEach(function(n){ if (n.nodeType === 1 && n.tagName === 'H1' && n.textContent.trim()){ cur = document.createElement('section'); cur.className = 'pg'; n.parentNode.insertBefore(cur, n); pages.push({ t: n.textContent.trim(), el: cur }); } if (cur && n.nodeType === 1 && n.tagName !== 'STYLE') cur.appendChild(n); });
+    function go(i, scroll){
+      pages.forEach(function(p, k){ p.el.hidden = k !== i; p.chip.setAttribute('aria-pressed', k === i ? 'true' : 'false'); });
+      var nx = sh.getElementById ? null : null; var b = document.getElementById('lnext');
+      if (b){ b.hidden = i >= pages.length - 1; b.textContent = i < pages.length - 1 ? '下一頁：' + pages[i + 1].t + ' ›' : ''; b.onclick = function(){ go(i + 1, true); }; }
+      pages[i].chip.scrollIntoView({ inline: 'center', block: 'nearest' });
+      if (scroll) window.scrollTo({ top: document.getElementById('lnav').offsetTop - 4, behavior: 'smooth' });
+    }
+    pages.forEach(function(p, i){ var c = document.createElement('button'); c.className = 'chip'; c.textContent = p.t; c.onclick = function(){ go(i, true); }; nav.appendChild(c); p.chip = c; });
+    if (pages.length){ var nb = document.createElement('button'); nb.id = 'lnext'; nb.className = 'go ghost'; host.parentNode.insertBefore(nb, host.nextSibling); go(0, false); }
     // 浮水印：姓名＋電話末三碼＋今天日期
     var now = new Date(), wm = (j.who.name || '') + ' ' + (j.who.ph ? '***' + j.who.ph : '') + ' ' + (now.getMonth() + 1) + '/' + now.getDate();
     var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="260" height="170"><text x="10" y="110" transform="rotate(-24 130 85)" font-size="17" font-family="sans-serif" fill="rgba(120,120,120,0.16)">' + esc(wm) + '</text></svg>';
