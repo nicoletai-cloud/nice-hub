@@ -69,6 +69,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   <div class="brand">禮車助手</div>
   <h1 id="title">填寫禮車車卡</h1>
   <p class="lead" id="lead">填好按送出就完成綁定，之後派車不用再填資料。</p>
+  <button type="button" class="go ghost" id="topAdd" hidden style="margin:0 0 18px">＋ 增加支援車輛</button>
   <div class="note warn" id="ownLine" style="margin:0 0 16px">⚠️ 請用<b>駕駛本人</b>的 LINE 開啟並填寫。<br>這個 LINE 會綁定成司機帳號，之後的派車通知都會傳到這裡，請不要用家人或車行的 LINE 代填。</div>
 
   <div class="state" id="loading">讀取中…</div>
@@ -113,7 +114,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       <input id="emRel" maxlength="10" placeholder="點上面選，或自己填" required>
       <div class="err" id="e-emRel"></div>
     </div>
-    <div class="sec">車輛資料<small>有兩台以上的車，送出後可以再新增下一台</small></div>
+    <div class="sec">車輛資料<small>有兩台以上的車，可以按「增加支援車輛」一台一台加</small></div>
     <div class="chips" id="carPick" hidden></div>
     <div class="field">
       <label>廠牌</label>
@@ -181,7 +182,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     <div class="big">✅</div>
     <h2 id="doneTitle">綁定完成</h2>
     <p id="doneMsg"></p>
-    <button type="button" class="go" id="addMore">＋ 再新增一台車</button>
+    <button type="button" class="go" id="addMore">＋ 增加支援車輛</button>
     <button type="button" class="go ghost" id="close">回到聊天室</button>
   </div>
 </div>
@@ -301,10 +302,11 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   function renderCarPick(){
     var box = $('carPick'), saved = cars.filter(function(c){ return c.saved; });
     box.hidden = !bound || !saved.length;
+    $('topAdd').hidden = !bound || !saved.length;
     var L = cars.filter(function(c){ return c.saved || (c.photos || []).length || (c.ins || []).length || c.cid === cid; });
     if (!curCar() && L.every(function(c){ return c.cid !== cid; })) L.push({ cid: cid });
     box.innerHTML = L.map(function(c){ return '<button type="button" class="chip" data-cid="' + c.cid + '" aria-pressed="' + (c.cid === cid) + '">' + (c.saved ? '' : '✎ ') + carLabel(c) + (c.saved ? '' : '（未完成）') + '</button>'; }).join('') +
-      '<button type="button" class="chip add" data-cid="+">＋ 新增一台車</button>';
+      '<button type="button" class="chip add" data-cid="+">＋ 增加支援車輛</button>';
     var cc = curCar();
     $('carDel').hidden = !cc || (cc.saved ? saved.length < 2 : !((cc.photos || []).length || (cc.ins || []).length));
     goLabel = !bound ? '送出車卡' : (cc && cc.saved ? '送出更新' : '新增這台車'); $('go').textContent = goLabel;
@@ -412,14 +414,15 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
         cars = j.cars || cars; var kind = j.isNew ? 'new' : j.isNewCar ? 'car' : 'upd';
         bound = true; $('name').readOnly = true; $('title').textContent = '更新禮車車卡';
         $('f').hidden = true; $('done').hidden = false; $('ownLine').hidden = true;
-        $('doneTitle').textContent = kind === 'new' ? '綁定完成' : kind === 'car' ? '已新增這台車' : '車卡已更新';
-        $('doneMsg').textContent = kind === 'new' ? '謝謝！之後派車不用再填資料。\n有第二台車的話，按下面「再新增一台車」。\n車子或電話有變，再打開這個表單修改就好。' : kind === 'car' ? '謝謝！這台車已經加進你的車卡。' : '資料已更新，謝謝！';
+        $('doneTitle').textContent = kind === 'new' ? '綁定完成' : kind === 'car' ? '已增加支援車輛' : '車卡已更新';
+        $('doneMsg').textContent = kind === 'new' ? '謝謝！之後派車不用再填資料。\n有第二台車的話，按下面「增加支援車輛」。\n車子或電話有變，再打開這個表單修改就好。' : kind === 'car' ? '謝謝！這台車已經加進你的車卡。' : '資料已更新，謝謝！';
         $('doneMsg').textContent += missTxt();
-        try { if (liff.isInClient()) liff.sendMessages([{ type: 'text', text: kind === 'new' ? '✅ 禮車車卡已送出' : kind === 'car' ? '✅ 已新增一台車：' + val('plate').toUpperCase() : '✅ 禮車車卡已更新' }]).catch(function(){}); } catch (x) {}
+        try { if (liff.isInClient()) liff.sendMessages([{ type: 'text', text: kind === 'new' ? '✅ 禮車車卡已送出' : kind === 'car' ? '✅ 已增加支援車輛：' + val('plate').toUpperCase() : '✅ 禮車車卡已更新' }]).catch(function(){}); } catch (x) {}
       })
       .catch(function(err){ $('srvErr').hidden = false; $('srvErr').textContent = err.message || String(err); })
       .then(function(){ $('go').disabled = false; $('go').textContent = goLabel; });
   });
+  $('topAdd').addEventListener('click', function(){ if ($('done').hidden === false){ $('done').hidden = true; $('f').hidden = false; } cid = newCid(); loadCar(null); setTimeout(function(){ $('brandChips').scrollIntoView({ block: 'center' }); }, 50); });
   $('close').addEventListener('click', function(){ try { liff.closeWindow(); } catch (x) {} });
   $('addMore').addEventListener('click', function(){ cid = newCid(); loadCar(null); $('done').hidden = true; $('f').hidden = false; window.scrollTo(0, 0); setTimeout(function(){ $('brandChips').scrollIntoView({ block: 'center' }); }, 50); });
 
