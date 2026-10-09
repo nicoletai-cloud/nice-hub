@@ -95,7 +95,8 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     </div>
     <div class="field">
       <label for="car">車款</label>
-      <input id="car" maxlength="25" placeholder="例：Model Y" required>
+      <div class="chips" id="modelChips" hidden></div>
+      <input id="car" maxlength="25" placeholder="其他車款請直接輸入" required>
       <div class="err" id="e-car"></div>
     </div>
     <div class="field">
@@ -179,14 +180,33 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     $('brandChips').querySelectorAll('.chip').forEach(function(c){ c.setAttribute('aria-pressed', String(c.textContent === b)); });
     $('brandOther').hidden = b !== '其他';
     $('e-brand').textContent = ''; $('brandOther').classList.remove('bad');
+    modelSync();
   }
   $('brandChips').addEventListener('click', function(e){
     var c = e.target.closest('.chip'); if (!c) return;
+    $('car').value = ''; modelPick = '';
     setBrand(c.textContent);
     if (brand === '其他') $('brandOther').focus();
   });
   $('brandOther').addEventListener('input', function(){ $('e-brand').textContent = ''; $('brandOther').classList.remove('bad'); });
   function brandText(){ return brand === '其他' ? val('brandOther') : brand; }
+
+  // 車款：官網有標價的車款用按鈕選，沒有的選「其他」自己填
+  var MODEL_OPTS = {"Tesla": ["Model 3", "Model Y", "Model S", "Model X"], "Benz": ["W222", "Vito 九人座"], "Toyota": ["Alphard 豪華七人座"], "Lexus": ["LM 豪華七人座"]}, modelPick = '';
+  function modelSync(){
+    var box = $('modelChips'), inp = $('car'), L = MODEL_OPTS[brand] || [], v = inp.value.trim();
+    if (!L.length){ box.hidden = true; inp.hidden = false; modelPick = ''; return; }
+    if (modelPick !== '其他') modelPick = L.indexOf(v) >= 0 ? v : (v ? '其他' : '');
+    box.hidden = false;
+    box.innerHTML = L.concat(['其他']).map(function(m){ return '<button type="button" class="chip" aria-pressed="' + (m === modelPick) + '">' + m + '</button>'; }).join('');
+    inp.hidden = modelPick !== '其他';
+  }
+  $('modelChips').addEventListener('click', function(e){
+    var c = e.target.closest('.chip'); if (!c) return; var inp = $('car');
+    inp.classList.remove('bad'); $('e-car').textContent = '';
+    if (c.textContent === '其他'){ modelPick = '其他'; inp.value = ''; modelSync(); inp.focus(); }
+    else { modelPick = c.textContent; inp.value = c.textContent; modelSync(); }
+  });
   // 舊資料的車款拆回廠牌＋車款
   function splitCar(car){
     car = String(car || '').trim();
@@ -222,7 +242,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     if (val('plate').replace(/[^A-Za-z0-9]/g, '').length < 4) errs.plate = '請填完整車牌';
     if (!brand) errs.brand = '請選廠牌';
     else if (brand === '其他' && !val('brandOther')) { errs.brand = '請填其他進口車廠牌'; $('brandOther').classList.add('bad'); }
-    if (!val('car')) errs.car = '請填車款';
+    if (!val('car')) errs.car = modelPick === '其他' || !(MODEL_OPTS[brand] || []).length ? '請填車款' : '請選車款';
     if (!val('color')) errs.color = '請選或填車色';
     if (!/^([2-9]|1[0-9])$/.test(val('seats'))) errs.seats = '請填 2～19 的數字';
     if (!/^\d{3}$/.test(val('bankCode'))) errs.bankCode = '請填 3 碼銀行代碼（例：822）';
@@ -367,6 +387,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       var sc = splitCar(j.card.car); j.card.car = sc.model;
       if (sc.brand) setBrand(sc.brand); if (sc.other) $('brandOther').value = sc.other;
       FIELDS.forEach(function(k){ $(k).value = j.card[k] || ''; if ($(k)._sync) $(k)._sync(); });
+      modelSync();
       showBank();
       $('name').readOnly = true;
       goLabel = '送出更新'; $('go').textContent = goLabel;

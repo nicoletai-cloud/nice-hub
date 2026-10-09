@@ -103,14 +103,15 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     <div class="field">
       <label>廠牌</label>
       <div class="chips" id="brandChips">
-        <button type="button" class="chip">Tesla</button><button type="button" class="chip">Benz</button><button type="button" class="chip">BMW</button><button type="button" class="chip">Lexus</button><button type="button" class="chip">Toyota</button><button type="button" class="chip">其他</button>
+        <button type="button" class="chip">Tesla</button><button type="button" class="chip">Benz</button><button type="button" class="chip">BMW</button><button type="button" class="chip">Maserati</button><button type="button" class="chip">Porsche</button><button type="button" class="chip">Bentley</button><button type="button" class="chip">Rolls-Royce</button><button type="button" class="chip">Lexus</button><button type="button" class="chip">Toyota</button><button type="button" class="chip">其他</button>
       </div>
       <input id="brandOther" maxlength="15" placeholder="其他進口車廠牌（例：Volvo）" hidden>
       <div class="err" id="e-brand"></div>
     </div>
     <div class="field">
       <label for="model">車款</label>
-      <input id="model" maxlength="25" placeholder="例：Model Y" required>
+      <div class="chips" id="modelChips" hidden></div>
+      <input id="model" maxlength="25" placeholder="其他車款請直接輸入" required>
       <div class="err" id="e-model"></div>
     </div>
     <div class="field">
@@ -224,10 +225,28 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     brand = b;
     $('brandChips').querySelectorAll('.chip').forEach(function(c){ c.setAttribute('aria-pressed', String(c.textContent === b)); });
     $('brandOther').hidden = b !== '其他'; $('e-brand').textContent = ''; $('brandOther').classList.remove('bad');
+    modelSync();
   }
-  $('brandChips').addEventListener('click', function(e){ var c = e.target.closest('.chip'); if (!c) return; setBrand(c.textContent); if (brand === '其他') $('brandOther').focus(); });
+  $('brandChips').addEventListener('click', function(e){ var c = e.target.closest('.chip'); if (!c) return; $('model').value = ''; modelPick = ''; setBrand(c.textContent); if (brand === '其他') $('brandOther').focus(); });
   $('brandOther').addEventListener('input', function(){ $('e-brand').textContent = ''; $('brandOther').classList.remove('bad'); });
   function brandText(){ return brand === '其他' ? val('brandOther') : brand; }
+  // 車款：官網有標價的車款用按鈕選，沒有的選「其他」自己填
+  var MODEL_OPTS = {"Tesla": ["Model X", "Model S", "Model Y", "Model 3"], "Benz": ["W205", "W212(改)", "W213", "W222(2013-2018)", "W222(改)(2018-2020)", "W223", "VITO", "G Car"], "BMW": ["F30", "F10", "F02", "G12", "G12(改)"], "Maserati": ["Ghibli", "Levante"], "Porsche": ["Panamera", "Macan"], "Bentley": ["舊款(2017)", "新款"], "Rolls-Royce": ["Ghost 古斯特", "Phantom 幻影"], "Lexus": ["LM 300h"], "Toyota": ["Alphard"]}, modelPick = '';
+  function modelSync(){
+    var box = $('modelChips'), inp = $('model'), L = MODEL_OPTS[brand] || [], v = inp.value.trim();
+    if (!L.length){ box.hidden = true; inp.hidden = false; modelPick = ''; return; }
+    if (modelPick !== '其他') modelPick = L.indexOf(v) >= 0 ? v : (v ? '其他' : '');
+    box.hidden = false;
+    box.innerHTML = L.concat(['其他']).map(function(m){ return '<button type="button" class="chip" aria-pressed="' + (m === modelPick) + '">' + m + '</button>'; }).join('');
+    inp.hidden = modelPick !== '其他';
+  }
+  $('modelChips').addEventListener('click', function(e){
+    var c = e.target.closest('.chip'); if (!c) return; var inp = $('model');
+    inp.classList.remove('bad'); $('e-model').textContent = '';
+    if (c.textContent === '其他'){ modelPick = '其他'; inp.value = ''; modelSync(); inp.focus(); }
+    else { modelPick = c.textContent; inp.value = c.textContent; modelSync(); }
+  });
+
 
   // 包膜／改裝 有無
   function setYn(k, v){
@@ -307,7 +326,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     if (val('plate').replace(/[^A-Za-z0-9]/g, '').length < 4) errs.plate = '請填完整車牌';
     if (!brand) errs.brand = '請選廠牌';
     else if (brand === '其他' && !val('brandOther')) { errs.brand = '請填其他進口車廠牌'; $('brandOther').classList.add('bad'); }
-    if (!val('model')) errs.model = '請填車款';
+    if (!val('model')) errs.model = modelPick === '其他' || !(MODEL_OPTS[brand] || []).length ? '請填車款' : '請選車款';
     if (!/^([2-9]|1[0-9])$/.test(val('seats'))) errs.seats = '請填 2～19 的數字';
     if (!val('color')) errs.color = '請填車色';
     if (!val('emName')) errs.emName = '請填緊急聯絡人稱呼';
@@ -348,7 +367,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   $('close').addEventListener('click', function(){ try { liff.closeWindow(); } catch (x) {} });
 
   // 舊車款字串拆回廠牌
-  var BRANDS = ['Tesla','Benz','BMW','Lexus','Toyota'];
+  var BRANDS = ['Tesla','Benz','BMW','Maserati','Porsche','Bentley','Rolls-Royce','Lexus','Toyota'];
   liff.init({ liffId: LIFF_ID }).then(function(){
     if (!liff.isLoggedIn()){ liff.login({ redirectUri: location.href }); return null; }
     idToken = liff.getIDToken() || '';
