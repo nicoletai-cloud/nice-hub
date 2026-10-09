@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>司機車卡｜好好禮車</title>
+<style>
+:root{--bg:#f8f5f0;--surface:#fff;--fg:#2f2a24;--muted:#7a7066;--line:#e4dbce;--accent:#8a6d43;--accent-ink:#fff;--warn:#b4532a;--warn-soft:#fbeee6;--ok:#2f7d4f;--ok-soft:#e8f4ec}
+@media (prefers-color-scheme:dark){:root{--bg:#1d1a17;--surface:#26221e;--fg:#f1ebe3;--muted:#b3a899;--line:#3b352e;--accent:#c9a46b;--accent-ink:#1d1a17;--warn:#f0a07a;--warn-soft:#3a2a22;--ok:#7fc79a;--ok-soft:#1f3328}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.6 -apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif}
+.wrap{max-width:520px;margin:0 auto;padding:20px 16px calc(28px + env(safe-area-inset-bottom))}
+.brand{color:var(--accent);font-weight:700;letter-spacing:.08em;font-size:15px}
+h1{font-size:24px;margin:2px 0 4px}
+.lead{color:var(--muted);margin:0 0 18px;font-size:15px}
+form{display:grid;gap:16px}
+.field{display:grid;gap:6px}
+label{font-weight:600}
+label small{font-weight:400;color:var(--muted);margin-left:6px}
+input{font:inherit;font-size:18px;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;min-height:48px;width:100%}
+input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+input[readonly]{background:transparent;color:var(--muted)}
+input.bad{border-color:var(--warn);background:var(--warn-soft)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:inherit;font-size:15px;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 14px;min-height:38px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.err{color:var(--warn);font-size:14px;min-height:0}
+button.go{font:inherit;font-weight:700;font-size:18px;color:var(--accent-ink);background:var(--accent);border:0;border-radius:12px;min-height:52px;width:100%;cursor:pointer;margin-top:4px}
+button.go:disabled{opacity:.6}
+.note{border-radius:12px;padding:14px 16px;white-space:pre-line}
+.note.warn{background:var(--warn-soft);color:var(--warn)}
+.note.ok{background:var(--ok-soft);color:var(--ok)}
+.state{text-align:center;color:var(--muted);padding:48px 0}
+.done{text-align:center;padding:36px 0}
+.done .big{font-size:52px;line-height:1}
+.done h2{margin:10px 0 6px}
+.done p{color:var(--muted);margin:0 0 20px;white-space:pre-line}
+[hidden]{display:none!important}
+</style>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js" charset="utf-8"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">好好禮車 司機回報平台</div>
+  <h1 id="title">填寫車卡</h1>
+  <p class="lead" id="lead">填好按送出就完成綁定，之後接單不用再填資料。</p>
+
+  <div class="state" id="loading">讀取中…</div>
+  <div class="note warn" id="fatal" hidden></div>
+
+  <form id="f" hidden novalidate>
+    <div class="field">
+      <label for="name">姓名</label>
+      <input id="name" autocomplete="name" maxlength="20" required>
+      <div class="err" id="e-name"></div>
+    </div>
+    <div class="field">
+      <label for="phone">手機號碼</label>
+      <input id="phone" type="tel" inputmode="numeric" autocomplete="tel" maxlength="12" placeholder="09xxxxxxxx" required>
+      <div class="err" id="e-phone"></div>
+    </div>
+    <div class="field">
+      <label for="plate">車牌<small>例：RED-7380</small></label>
+      <input id="plate" autocapitalize="characters" maxlength="10" required>
+      <div class="err" id="e-plate"></div>
+    </div>
+    <div class="field">
+      <label for="car">車款</label>
+      <div class="chips" data-for="car">
+        <button type="button" class="chip">Model Y</button><button type="button" class="chip">Model 3</button><button type="button" class="chip">Model S</button><button type="button" class="chip">Model X</button><button type="button" class="chip">Benz Vito</button><button type="button" class="chip">Toyota Alphard</button><button type="button" class="chip">Lexus LM</button>
+      </div>
+      <input id="car" maxlength="30" placeholder="點上面選，或自己輸入（例：Model Y 煥新款）" required>
+      <div class="err" id="e-car"></div>
+    </div>
+    <div class="field">
+      <label for="color">車色</label>
+      <div class="chips" data-for="color">
+        <button type="button" class="chip">白色</button><button type="button" class="chip">黑色</button><button type="button" class="chip">灰色</button><button type="button" class="chip">銀色</button><button type="button" class="chip">藍色</button><button type="button" class="chip">紅色</button>
+      </div>
+      <input id="color" maxlength="10" placeholder="點上面選，或自己輸入" required>
+      <div class="err" id="e-color"></div>
+    </div>
+    <div class="field">
+      <label for="seats">座位數<small>含司機</small></label>
+      <div class="chips" data-for="seats">
+        <button type="button" class="chip">5</button><button type="button" class="chip">7</button><button type="button" class="chip">9</button>
+      </div>
+      <input id="seats" type="number" inputmode="numeric" min="2" max="19" placeholder="例：5" required>
+      <div class="err" id="e-seats"></div>
+    </div>
+    <div class="note warn" id="srvErr" hidden></div>
+    <button type="submit" class="go" id="go">送出車卡</button>
+  </form>
+
+  <div class="done" id="done" hidden>
+    <div class="big">✅</div>
+    <h2 id="doneTitle">綁定完成</h2>
+    <p id="doneMsg"></p>
+    <button type="button" class="go" id="close">回到聊天室</button>
+  </div>
+</div>
+<script>
+(function(){
+  var BOT = 'https://script.google.com/macros/s/AKfycbwoKk13j5YOtkA5cTh3FtvECekYm0uMBPsid1H--kB7bhUVpDFvSnSA0iTzCfc8IT11_Q/exec';
+  var $ = function(id){ return document.getElementById(id); };
+  var idToken = '', disp = '', bound = false, goLabel = '送出車卡';
+
+  function fatal(msg){ $('loading').hidden = true; $('f').hidden = true; $('fatal').hidden = false; $('fatal').textContent = msg; }
+  function post(body){
+    return fetch(BOT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) })
+      .then(function(r){ return r.json(); });
+  }
+
+  // 快速選項：點了帶入欄位，再點一次取消
+  document.querySelectorAll('.chips').forEach(function(box){
+    var input = $(box.getAttribute('data-for'));
+    function sync(){ box.querySelectorAll('.chip').forEach(function(c){ c.setAttribute('aria-pressed', String(c.textContent === input.value.trim())); }); }
+    box.addEventListener('click', function(e){
+      var c = e.target.closest('.chip'); if (!c) return;
+      input.value = (c.getAttribute('aria-pressed') === 'true') ? '' : c.textContent;
+      input.classList.remove('bad'); $('e-' + input.id).textContent = '';
+      sync(); input.dispatchEvent(new Event('input'));
+    });
+    input.addEventListener('input', sync);
+    input._sync = sync;
+  });
+
+  function val(id){ return $(id).value.trim(); }
+  function check(){
+    var errs = {};
+    var phone = val('phone').replace(/[^0-9]/g, '');
+    if (!val('name')) errs.name = '請填姓名';
+    if (!/^09\d{8}$/.test(phone)) errs.phone = '請填 10 碼手機號碼（09 開頭）';
+    if (val('plate').replace(/[^A-Za-z0-9]/g, '').length < 4) errs.plate = '請填完整車牌';
+    if (!val('car')) errs.car = '請選或填車款';
+    if (!val('color')) errs.color = '請選或填車色';
+    if (!/^([2-9]|1[0-9])$/.test(val('seats'))) errs.seats = '請填 2～19 的數字';
+    ['name','phone','plate','car','color','seats'].forEach(function(k){
+      $(k).classList.toggle('bad', !!errs[k]); $('e-' + k).textContent = errs[k] || '';
+    });
+    var first = Object.keys(errs)[0];
+    if (first) $(first).focus();
+    return !first;
+  }
+  ['name','phone','plate','car','color','seats'].forEach(function(k){
+    $(k).addEventListener('input', function(){ $(k).classList.remove('bad'); $('e-' + k).textContent = ''; });
+  });
+  $('plate').addEventListener('blur', function(){ $('plate').value = $('plate').value.toUpperCase(); });
+
+  $('f').addEventListener('submit', function(e){
+    e.preventDefault();
+    $('srvErr').hidden = true;
+    if (!check()) return;
+    $('go').disabled = true; $('go').textContent = '送出中…';
+    post({ action: 'drvLiff', op: 'save', idToken: idToken, disp: disp,
+      card: { name: val('name'), phone: val('phone'), plate: val('plate').toUpperCase(), car: val('car'), color: val('color'), seats: val('seats') } })
+      .then(function(j){
+        if (!j || !j.ok) throw new Error((j && j.error) || '送出失敗，請再試一次');
+        if (!j.done){ $('srvErr').hidden = false; $('srvErr').textContent = (j.msg || '資料有誤，請檢查後再送出').split('\n')[0]; return; }
+        $('f').hidden = true; $('done').hidden = false;
+        $('doneTitle').textContent = bound ? '車卡已更新' : '綁定完成';
+        $('doneMsg').textContent = bound ? '資料已更新，謝謝！' : '之後接單不用再填資料。\n車子或電話有變，再從選單按「綁定車卡」修改就好。';
+        try { if (liff.isInClient()) liff.sendMessages([{ type: 'text', text: bound ? '✅ 資料已用表單更新' : '✅ 資料已用表單送出' }]).catch(function(){}); } catch (x) {}
+      })
+      .catch(function(err){ $('srvErr').hidden = false; $('srvErr').textContent = err.message || String(err); })
+      .then(function(){ $('go').disabled = false; $('go').textContent = goLabel; });
+  });
+  $('close').addEventListener('click', function(){ try { liff.closeWindow(); } catch (x) {} });
+
+  fetch(BOT + '?action=drvLiffCfg').then(function(r){ return r.json(); }).then(function(c){
+    if (!c || !c.liffId) throw new Error('車卡表單還沒設定完成，請回聊天室用文字格式填寫。');
+    return liff.init({ liffId: c.liffId });
+  }).then(function(){
+    if (!liff.isLoggedIn()){ liff.login({ redirectUri: location.href }); return null; }
+    idToken = liff.getIDToken() || '';
+    return liff.getProfile().then(function(p){ disp = p.displayName || ''; }, function(){}).then(function(){
+      return post({ action: 'drvLiff', op: 'load', idToken: idToken });
+    });
+  }).then(function(j){
+    if (j === null) return;
+    if (!j || !j.ok) throw new Error((j && j.error) || '讀取失敗，請關掉後重新開啟');
+    bound = !!j.bound;
+    if (bound && j.card){
+      $('title').textContent = '更新車卡';
+      $('lead').textContent = '確認或修改下面的資料，改好按送出。';
+      ['name','phone','plate','car','color','seats'].forEach(function(k){ $(k).value = j.card[k] || ''; if ($(k)._sync) $(k)._sync(); });
+      $('name').readOnly = true;
+      goLabel = '送出更新'; $('go').textContent = goLabel;
+    } else if (disp && !val('name')) {
+      $('name').placeholder = '真實姓名（LINE 名稱：' + disp + '）';
+    }
+    $('loading').hidden = true; $('f').hidden = false;
+  }).catch(function(err){ fatal(err && err.message ? err.message : '讀取失敗，請關掉後重新開啟'); });
+})();
+</script>
+</body>
+</html>
