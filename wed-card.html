@@ -33,6 +33,8 @@ button.go{font:inherit;font-weight:700;font-size:18px;color:var(--accent-ink);ba
 button.go:disabled{opacity:.6}
 .note{border-radius:12px;padding:14px 16px;white-space:pre-line}
 #ownLine{white-space:normal}
+#carPick{margin:0 0 4px}
+#carPick .chip.add{border-style:dashed}
 .note.warn{background:var(--warn-soft);color:var(--warn)}
 .note.ok{background:var(--ok-soft);color:var(--ok)}
 .state{text-align:center;color:var(--muted);padding:48px 0}
@@ -94,7 +96,25 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       <div class="chips" id="zodiacChips"></div>
       <div class="err" id="e-zodiac"></div>
     </div>
-    <div class="sec">車輛資料</div>
+    <div class="sec">緊急聯絡人<small>只有在禮車出發時間沒有回報、聯絡不到你時才會用到，平時不會聯絡</small></div>
+    <div class="field">
+      <label for="emName">稱呼</label>
+      <input id="emName" maxlength="20" placeholder="例：王太太、陳先生" required>
+      <div class="err" id="e-emName"></div>
+    </div>
+    <div class="field">
+      <label for="emPhone">電話</label>
+      <input id="emPhone" type="tel" inputmode="numeric" maxlength="12" placeholder="09xxxxxxxx" required>
+      <div class="err" id="e-emPhone"></div>
+    </div>
+    <div class="field">
+      <label for="emRel">關係</label>
+      <div class="chips" data-for="emRel"><button type="button" class="chip">配偶</button><button type="button" class="chip">父母</button><button type="button" class="chip">兄弟姊妹</button><button type="button" class="chip">朋友</button></div>
+      <input id="emRel" maxlength="10" placeholder="點上面選，或自己填" required>
+      <div class="err" id="e-emRel"></div>
+    </div>
+    <div class="sec">車輛資料<small>有兩台以上的車，送出後可以再新增下一台</small></div>
+    <div class="chips" id="carPick" hidden></div>
     <div class="field">
       <label>廠牌</label>
       <div class="chips" id="brandChips">
@@ -145,29 +165,13 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       <input id="modNote" maxlength="60" placeholder="說明改裝項目，例：改輪框、降低車身" hidden>
       <div class="err" id="e-mod"></div>
     </div>
-    <div class="sec">緊急聯絡人<small>只有在禮車出發時間沒有回報、聯絡不到你時才會用到，平時不會聯絡</small></div>
-    <div class="field">
-      <label for="emName">稱呼</label>
-      <input id="emName" maxlength="20" placeholder="例：王太太、陳先生" required>
-      <div class="err" id="e-emName"></div>
-    </div>
-    <div class="field">
-      <label for="emPhone">電話</label>
-      <input id="emPhone" type="tel" inputmode="numeric" maxlength="12" placeholder="09xxxxxxxx" required>
-      <div class="err" id="e-emPhone"></div>
-    </div>
-    <div class="field">
-      <label for="emRel">關係</label>
-      <div class="chips" data-for="emRel"><button type="button" class="chip">配偶</button><button type="button" class="chip">父母</button><button type="button" class="chip">兄弟姊妹</button><button type="button" class="chip">朋友</button></div>
-      <input id="emRel" maxlength="10" placeholder="點上面選，或自己填" required>
-      <div class="err" id="e-emRel"></div>
-    </div>
     <div class="sec">車輛外觀照片<small>1～3 張，拍得到車頭和車牌</small></div>
     <div id="photos"></div>
     <div class="err" id="e-photos"></div>
     <div class="sec">保險單<small>需包含強制險及任意險，照片或 PDF，最多 5 個檔案</small></div>
     <div id="insBox"></div>
     <div class="err" id="e-ins"></div>
+    <button type="button" class="go ghost" id="carDel" hidden>刪除這台車</button>
     <div class="note warn" id="srvErr" hidden></div>
     <button type="submit" class="go" id="go">送出車卡</button>
     <p class="tnote">資料只給好好禮車派車使用。</p>
@@ -177,6 +181,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     <div class="big">✅</div>
     <h2 id="doneTitle">綁定完成</h2>
     <p id="doneMsg"></p>
+    <button type="button" class="go" id="addMore">＋ 再新增一台車</button>
     <button type="button" class="go ghost" id="close">回到聊天室</button>
   </div>
 </div>
@@ -185,7 +190,8 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   var BOT = 'https://script.google.com/macros/s/AKfycbwoKk13j5YOtkA5cTh3FtvECekYm0uMBPsid1H--kB7bhUVpDFvSnSA0iTzCfc8IT11_Q/exec';
   var LIFF_ID = '2011949076-1fqUEtE2';
   var $ = function(id){ return document.getElementById(id); };
-  var idToken = '', disp = '', bound = false, goLabel = '送出車卡', photos = [], ins = [], busy = false;
+  var idToken = '', disp = '', bound = false, goLabel = '送出車卡', photos = [], ins = [], busy = false, cars = [], cid = '';
+  function newCid(){ return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5); }
   var FIELDS = ['name','phone','plate','model','year','seats','color','emName','emPhone','emRel'];
   var ZOD = ['鼠','牛','虎','兔','龍','蛇','馬','羊','猴','雞','狗','豬'], zodiac = '', yn = { wrap: null, mod: null };
 
@@ -287,7 +293,47 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       (ins.length < 5 ? '<div class="ditem"><span class="lb">' + (ins.length ? '再加一個' : '保險單') + '</span><span class="st">' + ins.length + ' / 5</span><label class="pick"><input type="file" accept="image/*,application/pdf" data-up="ins" hidden>拍照／選檔</label></div>' : '');
     if (ins.length) $('e-ins').textContent = '';
   }
-  function setFiles(j){ photos = j.photos || []; ins = j.ins || []; renderPhotos(); }
+  function curCar(){ return cars.filter(function(c){ return c.cid === cid; })[0] || null; }
+  function setFiles(j){ if (j && j.cars) cars = j.cars; var c = curCar(); photos = (c && c.photos) || []; ins = (c && c.ins) || []; renderPhotos(); renderCarPick(); }
+  // 一位司機可以有好幾台車：上面列出已登記的車，點一台修改，或新增一台
+  function carLabel(c){ return [c.brand, c.model, c.plate].filter(Boolean).join(' ') || '新的一台車'; }
+  function renderCarPick(){
+    var box = $('carPick'), saved = cars.filter(function(c){ return c.saved; });
+    box.hidden = !bound || !saved.length;
+    var L = cars.filter(function(c){ return c.saved || (c.photos || []).length || (c.ins || []).length || c.cid === cid; });
+    if (!curCar() && L.every(function(c){ return c.cid !== cid; })) L.push({ cid: cid });
+    box.innerHTML = L.map(function(c){ return '<button type="button" class="chip" data-cid="' + c.cid + '" aria-pressed="' + (c.cid === cid) + '">' + (c.saved ? '' : '✎ ') + carLabel(c) + (c.saved ? '' : '（未完成）') + '</button>'; }).join('') +
+      '<button type="button" class="chip add" data-cid="+">＋ 新增一台車</button>';
+    var cc = curCar();
+    $('carDel').hidden = !cc || (cc.saved ? saved.length < 2 : !((cc.photos || []).length || (cc.ins || []).length));
+    goLabel = !bound ? '送出車卡' : (cc && cc.saved ? '送出更新' : '新增這台車'); $('go').textContent = goLabel;
+  }
+  function loadCar(c){
+    c = c || {};
+    ['plate','model','year','seats','color'].forEach(function(k){ $(k).value = c[k] || ''; $(k).classList.remove('bad'); $('e-' + k).textContent = ''; if ($(k)._sync) $(k)._sync(); });
+    modelPick = '';
+    if (c.brand){ if (BRANDS.indexOf(c.brand) >= 0){ $('brandOther').value = ''; setBrand(c.brand); } else { setBrand('其他'); $('brandOther').value = c.brand; } }
+    else { $('brandOther').value = ''; setBrand(''); }
+    if (c.saved){ setYn('wrap', !!c.wrap); setYn('mod', !!c.mod); } else { setYn('wrap', null); setYn('mod', null); }
+    $('wrapNote').value = c.wrapNote || ''; $('modNote').value = c.modNote || '';
+    ['brand','wrap','mod','photos','ins'].forEach(function(k){ $('e-' + k).textContent = ''; });
+    photos = c.photos || []; ins = c.ins || []; renderPhotos(); renderCarPick();
+  }
+  $('carPick').addEventListener('click', function(e){
+    var b = e.target.closest('[data-cid]'); if (!b || busy) return; $('srvErr').hidden = true;
+    if (b.getAttribute('data-cid') === '+'){ cid = newCid(); loadCar(null); $('brandChips').scrollIntoView({ block: 'center' }); }
+    else { cid = b.getAttribute('data-cid'); loadCar(curCar()); }
+  });
+  $('carDel').addEventListener('click', function(){
+    var cc = curCar(); if (!cc || busy) return;
+    if (!window.confirm('確定要刪除「' + carLabel(cc) + '」這台車嗎？')) return;
+    busy = true; $('carDel').textContent = '刪除中…';
+    post({ action: 'wedLiff', op: 'cardel', idToken: idToken, cid: cid }).then(function(j){
+      if (!j || !j.ok) throw new Error((j && j.error) || '刪除失敗');
+      cars = j.cars || []; var first = cars.filter(function(c){ return c.saved; })[0]; cid = first ? first.cid : newCid(); loadCar(first || null);
+    }).catch(function(err){ $('srvErr').hidden = false; $('srvErr').textContent = err.message || String(err); })
+      .then(function(){ busy = false; $('carDel').textContent = '刪除這台車'; });
+  });
   function shrink(file){
     return new Promise(function(res){
       if (!/^image\//.test(file.type) || /heic|heif/i.test(file.type)) return res(file);
@@ -306,7 +352,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     if (busy) return; busy = true; errEl.textContent = '';
     var lab = e.target.parentNode; lab.lastChild.textContent = '上傳中…';
     shrink(file).then(function(b){ if (b.size > 9 * 1024 * 1024) throw new Error('檔案太大（超過 9MB），請改用相機拍照');
-      var mime = b.type || file.type || 'image/jpeg'; return b64(b).then(function(s){ return post({ action: 'wedLiff', op: 'upload', kind: kind, idToken: idToken, disp: disp, name: val('name'), mime: mime, b64: s }); }); })
+      var mime = b.type || file.type || 'image/jpeg'; return b64(b).then(function(s){ return post({ action: 'wedLiff', op: 'upload', kind: kind, cid: cid, plate: val('plate'), idToken: idToken, disp: disp, name: val('name'), mime: mime, b64: s }); }); })
       .then(function(j){ if (!j || !j.ok) throw new Error((j && j.error) || '上傳失敗，請再試一次'); setFiles(j); })
       .catch(function(err){ errEl.textContent = err.message || String(err); lab.lastChild.textContent = '再試一次'; })
       .then(function(){ busy = false; });
@@ -314,7 +360,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   document.addEventListener('click', function(e){
     var b = e.target.closest && e.target.closest('[data-del]'); if (!b || busy) return;
     busy = true; b.textContent = '刪除中…';
-    post({ action: 'wedLiff', op: 'photodel', idToken: idToken, id: b.getAttribute('data-del'), kind: b.getAttribute('data-kind') || 'car' })
+    post({ action: 'wedLiff', op: 'photodel', cid: cid, idToken: idToken, id: b.getAttribute('data-del'), kind: b.getAttribute('data-kind') || 'car' })
       .then(function(j){ if (!j || !j.ok) throw new Error((j && j.error) || '刪除失敗'); setFiles(j); })
       .catch(function(err){ $('e-photos').textContent = err.message || String(err); }).then(function(){ busy = false; });
   });
@@ -357,21 +403,25 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     if (busy){ $('srvErr').hidden = false; $('srvErr').textContent = '檔案還在上傳，請稍等'; return; }
     if (!check()) return;
     $('go').disabled = true; $('go').textContent = '送出中…';
-    post({ action: 'wedLiff', op: 'save', idToken: idToken, disp: disp,
-      card: { name: val('name'), phone: val('phone'), area: areaText(), zodiac: zodiac, plate: val('plate').toUpperCase(), brand: brandText(), model: val('model'), year: val('year'), seats: val('seats'), color: val('color'),
-        wrap: yn.wrap, wrapNote: val('wrapNote'), mod: yn.mod, modNote: val('modNote'), emName: val('emName'), emPhone: val('emPhone'), emRel: val('emRel') } })
+    post({ action: 'wedLiff', op: 'save', idToken: idToken, disp: disp, cid: cid,
+      person: { name: val('name'), phone: val('phone'), area: areaText(), zodiac: zodiac, emName: val('emName'), emPhone: val('emPhone'), emRel: val('emRel') },
+      car: { plate: val('plate').toUpperCase(), brand: brandText(), model: val('model'), year: val('year'), seats: val('seats'), color: val('color'),
+        wrap: yn.wrap, wrapNote: val('wrapNote'), mod: yn.mod, modNote: val('modNote') } })
       .then(function(j){
         if (!j || !j.ok) throw new Error((j && j.error) || '送出失敗，請再試一次');
         if (!j.done){ $('srvErr').hidden = false; $('srvErr').textContent = j.msg || '資料有誤，請檢查後再送出'; return; }
+        cars = j.cars || cars; var kind = j.isNew ? 'new' : j.isNewCar ? 'car' : 'upd';
+        bound = true; $('name').readOnly = true; $('title').textContent = '更新禮車車卡';
         $('f').hidden = true; $('done').hidden = false; $('ownLine').hidden = true;
-        $('doneTitle').textContent = bound ? '車卡已更新' : '綁定完成';
-        $('doneMsg').textContent = bound ? '資料已更新，謝謝！' : '謝謝！之後派車不用再填資料。\n車子或電話有變，再打開這個表單修改就好。';
-        try { if (liff.isInClient()) liff.sendMessages([{ type: 'text', text: bound ? '✅ 禮車車卡已更新' : '✅ 禮車車卡已送出' }]).catch(function(){}); } catch (x) {}
+        $('doneTitle').textContent = kind === 'new' ? '綁定完成' : kind === 'car' ? '已新增這台車' : '車卡已更新';
+        $('doneMsg').textContent = kind === 'new' ? '謝謝！之後派車不用再填資料。\n有第二台車的話，按下面「再新增一台車」。\n車子或電話有變，再打開這個表單修改就好。' : kind === 'car' ? '謝謝！這台車已經加進你的車卡。' : '資料已更新，謝謝！';
+        try { if (liff.isInClient()) liff.sendMessages([{ type: 'text', text: kind === 'new' ? '✅ 禮車車卡已送出' : kind === 'car' ? '✅ 已新增一台車：' + val('plate').toUpperCase() : '✅ 禮車車卡已更新' }]).catch(function(){}); } catch (x) {}
       })
       .catch(function(err){ $('srvErr').hidden = false; $('srvErr').textContent = err.message || String(err); })
       .then(function(){ $('go').disabled = false; $('go').textContent = goLabel; });
   });
   $('close').addEventListener('click', function(){ try { liff.closeWindow(); } catch (x) {} });
+  $('addMore').addEventListener('click', function(){ cid = newCid(); loadCar(null); $('done').hidden = true; $('f').hidden = false; window.scrollTo(0, 0); setTimeout(function(){ $('brandChips').scrollIntoView({ block: 'center' }); }, 50); });
 
   // 舊車款字串拆回廠牌
   var BRANDS = ['Tesla','Benz','BMW','Maserati','Porsche','Bentley','Rolls-Royce','Lexus','Toyota'];
@@ -382,21 +432,20 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   }).then(function(j){
     if (j === null) return;
     if (!j || !j.ok) throw new Error((j && j.error) || '讀取失敗，請關掉後重新開啟');
-    bound = !!j.bound; photos = j.photos || []; ins = j.ins || [];
-    var c = j.card;
-    if (c){
-      ['name','phone','plate','model','year','seats','color','emName','emPhone','emRel'].forEach(function(k){ $(k).value = c[k] || ''; if ($(k)._sync) $(k)._sync(); });
-      areaLoad(c.area);
-      if (c.zodiac) setZodiac(c.zodiac);
-      if (c.brand){ if (BRANDS.indexOf(c.brand) >= 0) setBrand(c.brand); else { setBrand('其他'); $('brandOther').value = c.brand; } }
-      if (c.saved){ setYn('wrap', !!c.wrap); setYn('mod', !!c.mod); }
-      $('wrapNote').value = c.wrapNote || ''; $('modNote').value = c.modNote || '';
+    bound = !!j.bound; cars = j.cars || [];
+    var pp = j.person;
+    if (pp){
+      ['name','phone','emName','emPhone','emRel'].forEach(function(k){ $(k).value = pp[k] || ''; if ($(k)._sync) $(k)._sync(); });
+      areaLoad(pp.area);
+      if (pp.zodiac) setZodiac(pp.zodiac);
     }
+    var first = cars.filter(function(c){ return c.saved; })[0] || cars[0] || null;
+    cid = first ? first.cid : newCid();
     if (bound){
       $('title').textContent = '更新禮車車卡'; $('lead').textContent = '確認或修改下面的資料，改好按送出。';
-      $('name').readOnly = true; goLabel = '送出更新'; $('go').textContent = goLabel;
+      $('name').readOnly = true;
     }
-    renderPhotos();
+    loadCar(first);
     $('loading').hidden = true; $('f').hidden = false;
   }).catch(function(err){ fatal(err && err.message ? err.message : '讀取失敗，請關掉後重新開啟'); });
 })();
