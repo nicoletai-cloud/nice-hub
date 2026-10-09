@@ -51,6 +51,7 @@ button.go:disabled{opacity:.6}
 .done h2{margin:12px 0 8px}
 .done p{color:var(--muted);white-space:pre-line;margin:0}
 .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.note-tip{background:var(--soft);border-left:4px solid var(--accent);border-radius:8px;padding:10px 14px;font-size:15px;margin:-4px 0 6px}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -78,26 +79,28 @@ button.go:disabled{opacity:.6}
     </div>
     <div class="field"><label class="q" for="phone">主要聯絡人電話<b>*</b></label><div class="help">請填寫婚禮當天方便聯繫的主要聯絡人手機號碼。</div><input id="phone" type="tel" inputmode="tel" autocomplete="tel" data-req placeholder="09xxxxxxxx"></div>
 
-    <div class="sec"><h2><i>02</i>當天的旅程</h2><p>地點或行程尚未確定，可先填寫「待確認」；用車時間請先填寫預估時間。
+    <div class="sec"><h2><i>02</i>禮車行程</h2><p>地點或行程尚未確定，可先填寫「待確認」；用車時間請先填寫預估時間。
 確切行程與用車時間，將於用車前一週再次與您核對。
 地點請填寫完整地址；如有飯店或場館名稱，請一併註明。</p></div>
     <div class="row2">
       <div class="field"><label class="q" for="start">預計開始用車時間<b>*</b></label><input id="start" type="time" data-req></div>
       <div class="field"><label class="q" for="end">預計結束用車時間<b>*</b></label><input id="end" type="time" data-req></div>
     </div>
-    <div class="field"><label class="q" for="meet">禮車集合地點<b>*</b></label><input id="meet" data-req placeholder="完整地址，例如：台北市大安區…（男方家）"></div>
-    <div class="field"><label class="q" for="wed">迎娶地點<b>*</b></label><input id="wed" data-req placeholder="完整地址"></div>
-    <div class="field"><label class="q" for="o1">其他停靠地點 1<small>選填</small></label><input id="o1" placeholder="完整地址"></div>
-    <div class="field" id="o1Lf"><label class="q">其他停靠地點 1 是什麼地點？<small>選填</small></label><div class="help">合約上會直接顯示地點名稱。</div>
+    <div class="note-tip" id="hoursTip" hidden></div>
+    <div class="field"><label class="q" for="meet">集合地址<b>*</b></label><input id="meet" data-req placeholder="完整地址，例如：台北市大安區和平東路二段 1 號"><div class="chips sub" data-pick="meetL"><button type="button" class="chip">男方家</button><button type="button" class="chip">女方家</button><button type="button" class="chip">飯店</button><button type="button" class="chip">新家</button><button type="button" class="chip" data-other>其他</button></div><input id="meetLOther" class="sub" placeholder="地點名稱" hidden></div>
+    <div class="field"><label class="q" for="wed">迎娶地址<b>*</b></label><input id="wed" data-req placeholder="完整地址"><div class="chips sub" data-pick="wedL"><button type="button" class="chip">女方家</button><button type="button" class="chip">男方家</button><button type="button" class="chip">飯店</button><button type="button" class="chip" data-other>其他</button></div><input id="wedLOther" class="sub" placeholder="地點名稱" hidden></div>
+    <div class="field"><label class="q" for="o1">其他停靠地址 1<small>選填</small></label><input id="o1" placeholder="完整地址"></div>
+    <div class="field" id="o1Lf"><label class="q">其他停靠地址 1 是什麼地點？<small>選填</small></label><div class="help">合約上會直接顯示地點名稱。</div>
       <div class="chips" data-pick="o1L"><button type="button" class="chip">新家</button><button type="button" class="chip">祭祖地點</button><button type="button" class="chip">證婚地點</button><button type="button" class="chip">儀式地點</button><button type="button" class="chip">入房地點</button><button type="button" class="chip" data-other>其他</button></div>
       <input id="o1LOther" class="sub" placeholder="地點名稱，例如：拍照景點" hidden>
     </div>
-    <div class="field"><label class="q" for="o2">其他停靠地點 2<small>選填</small></label><input id="o2" placeholder="完整地址"></div>
-    <div class="field" id="o2Lf"><label class="q">其他停靠地點 2 是什麼地點？<small>選填</small></label><div class="help">合約上會直接顯示地點名稱。</div>
+    <div class="field"><label class="q" for="o2">其他停靠地址 2<small>選填</small></label><input id="o2" placeholder="完整地址"></div>
+    <div class="field" id="o2Lf"><label class="q">其他停靠地址 2 是什麼地點？<small>選填</small></label><div class="help">合約上會直接顯示地點名稱。</div>
       <div class="chips" data-pick="o2L"><button type="button" class="chip">新家</button><button type="button" class="chip">祭祖地點</button><button type="button" class="chip">證婚地點</button><button type="button" class="chip">儀式地點</button><button type="button" class="chip">入房地點</button><button type="button" class="chip" data-other>其他</button></div>
       <input id="o2LOther" class="sub" placeholder="地點名稱" hidden>
     </div>
 
+    <div class="field"><label class="q">當日流程<small>選填，可複選</small></label><div class="chips" id="dayFlow"><button type="button" class="chip" aria-pressed="false">文定</button><button type="button" class="chip" aria-pressed="false">迎娶</button><button type="button" class="chip" aria-pressed="false">祭祖</button><button type="button" class="chip" aria-pressed="false">證婚</button><button type="button" class="chip" aria-pressed="false">宴客</button></div></div>
     <div class="field"><label class="q">禮車路線<small>選填</small></label><div class="help">依照當天的順序點選地點，例如：男方家 → 女方家 → 男方家 → 餐廳。點錯可以按「⌫ 倒退」。還不確定可以選「行前一週確認」。</div>
       <div class="route" id="routeShow"><span class="ph">還沒選擇路線</span></div>
       <div class="chips sub" id="routeChips"></div>
@@ -149,16 +152,31 @@ button.go:disabled{opacity:.6}
       var ob = key === 'role' ? $('roleOtherBox') : other;
       if (on){ pick[key] = ''; if (ob) ob.hidden = true; }
       else { b.setAttribute('aria-pressed', 'true'); pick[key] = b.hasAttribute('data-other') ? '__other' : b.textContent.trim(); if (ob){ ob.hidden = !b.hasAttribute('data-other'); if (!ob.hidden && other) other.focus(); } }
-      g.classList.remove('bad'); if (key === 'o1L' || key === 'o2L') renderRoute();
+      g.classList.remove('bad'); if (/^(o1L|o2L|meetL|wedL)$/.test(key)) renderRoute();
     });
     if (other) other.addEventListener('input', renderRoute);
   });
+  $('dayFlow').addEventListener('click', function(e){ var b = e.target.closest('.chip'); if (b) b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true'); });
+  // 用車時間超過方案時數：提醒（方案時數向機器人查這張訂單）
+  var PLAN = 0;
+  if (no) fetch(BOT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'wedForm', op: 'info', no: no }) }).then(function(r){ return r.json(); }).then(function(j){ if (j && j.ok && +j.hours > 0){ PLAN = +j.hours; hoursTip(); } }).catch(function(){});
+  function mins(t){ var m = String(t || '').match(/^(\d{1,2}):(\d{2})/); return m ? +m[1] * 60 + +m[2] : null; }
+  function hoursTip(){
+    var el = $('hoursTip'), a = mins($('start').value), b = mins($('end').value);
+    if (!PLAN || a == null || b == null){ el.hidden = true; return; }
+    var d = (b - a + 1440) % 1440, h = PLAN % 1 ? PLAN.toFixed(1) : String(PLAN);
+    if (d <= PLAN * 60 + 0.1){ el.hidden = true; return; }
+    el.hidden = false;
+    el.textContent = PLAN >= 3 ? '提醒：您的禮車方案為 ' + h + ' 小時，加時部分可於尾款支付。您可先選擇 ' + h + ' 小時以內的時間，我們會在用車前一週再次核對流程，後續可再增加時間。'
+      : '提醒：' + h + ' 小時方案無緩衝時間，加時會以每 0.5 小時收取一小時費用。我們會在用車前一週再次核對流程，如需更改方案可告知客服。';
+  }
+  $('start').addEventListener('change', hoursTip); $('end').addEventListener('change', hoursTip); $('start').addEventListener('input', hoursTip); $('end').addEventListener('input', hoursTip);
   function val(key){ var v = pick[key] || ''; return v === '__other' ? ($(key + 'Other').value || '').trim() : v; }
 
   // 路線：依序點地點，可倒退、清除、或選「行前一週確認」
   function places(){
     var L = ['男方家', '女方家', '餐廳', '飯店'];
-    [val('o1L'), val('o2L')].forEach(function(t){ if (t && L.indexOf(t) < 0) L.push(t); });
+    [val('meetL'), val('wedL'), val('o1L'), val('o2L')].forEach(function(t){ if (t && L.indexOf(t) < 0) L.push(t); });
     ['新家', '祭祖地點', '證婚地點', '儀式地點', '入房地點'].forEach(function(t){ if (L.indexOf(t) < 0) L.push(t); });
     return L;
   }
@@ -196,7 +214,7 @@ button.go:disabled{opacity:.6}
     var body = { action: 'wedForm', hp: $('hp').value, no: $('no').value.trim(), groom: $('groom').value.trim(), bride: $('bride').value.trim(), role: role, rel: rel, phone: $('phone').value.trim(),
       start: $('start').value, end: $('end').value, meet: $('meet').value.trim(), wed: $('wed').value.trim(),
       o1: $('o1').value.trim(), o1L: val('o1L'), o2: $('o2').value.trim(), o2L: val('o2L'),
-      route: later ? '行前一週確認' : route.join(' > '), note: $('note').value.trim(), cane: pick.cane, deco: pick.deco };
+      route: later ? '行前一週確認' : route.join(' > '), meetL: val('meetL'), wedL: val('wedL'), dayFlow: Array.prototype.filter.call($('dayFlow').children, function(c){ return c.getAttribute('aria-pressed') === 'true'; }).map(function(c){ return c.textContent; }).join('、'), note: $('note').value.trim(), cane: pick.cane, deco: pick.deco };
     if (PREVIEW){ $('f').hidden = true; $('done').hidden = false; $('done').querySelector('p').textContent = '（預覽模式：資料沒有送出）\n\n' + Object.keys(body).filter(function(k){ return k !== 'action' && k !== 'hp' && body[k]; }).map(function(k){ return k + '：' + body[k]; }).join('\n'); window.scrollTo(0, 0); return; }
     var go = $('go'); go.disabled = true; go.textContent = '送出中…';
     fetch(BOT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) })
