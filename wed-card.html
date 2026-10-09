@@ -110,6 +110,11 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       <div class="err" id="e-model"></div>
     </div>
     <div class="field">
+      <label for="year">出廠年份<small>行照上的出廠年月，例：2022</small></label>
+      <input id="year" type="number" inputmode="numeric" min="1990" max="2030" placeholder="例：2022" required>
+      <div class="err" id="e-year"></div>
+    </div>
+    <div class="field">
       <label for="plate">車牌<small>例：RED-7380</small></label>
       <input id="plate" autocapitalize="characters" maxlength="10" required>
       <div class="err" id="e-plate"></div>
@@ -181,7 +186,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   var LIFF_ID = '2011949076-1fqUEtE2';
   var $ = function(id){ return document.getElementById(id); };
   var idToken = '', disp = '', bound = false, goLabel = '送出車卡', photos = [], ins = [], busy = false;
-  var FIELDS = ['name','phone','plate','model','seats','color','emName','emPhone','emRel'];
+  var FIELDS = ['name','phone','plate','model','year','seats','color','emName','emPhone','emRel'];
   var ZOD = ['鼠','牛','虎','兔','龍','蛇','馬','羊','猴','雞','狗','豬'], zodiac = '', yn = { wrap: null, mod: null };
 
   function fatal(msg){ $('loading').hidden = true; $('f').hidden = true; $('fatal').hidden = false; $('fatal').textContent = msg; }
@@ -231,7 +236,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   $('brandOther').addEventListener('input', function(){ $('e-brand').textContent = ''; $('brandOther').classList.remove('bad'); });
   function brandText(){ return brand === '其他' ? val('brandOther') : brand; }
   // 車款：官網有標價的車款用按鈕選，沒有的選「其他」自己填
-  var MODEL_OPTS = {"Tesla": ["Model X", "Model S", "Model Y", "Model 3"], "Benz": ["W205", "W212(改)", "W213", "W222(2013-2018)", "W222(改)(2018-2020)", "W223", "VITO", "G Car"], "BMW": ["F30", "F10", "F02", "G12", "G12(改)"], "Maserati": ["Ghibli", "Levante"], "Porsche": ["Panamera", "Macan"], "Bentley": ["舊款(2017)", "新款"], "Rolls-Royce": ["Ghost 古斯特", "Phantom 幻影"], "Lexus": ["LM 300h"], "Toyota": ["Alphard"]}, modelPick = '';
+  var MODEL_OPTS = {"Tesla": ["Model X", "Model S", "Model Y", "煥新 Model Y", "Model 3", "新款 Model 3"], "Benz": ["W205", "W212(改)", "W213", "W222(2013-2018)", "W222(改)(2018-2020)", "W223", "VITO", "G Car"], "BMW": ["F30", "F10", "F02", "G12", "G12(改)"], "Maserati": ["Ghibli", "Levante"], "Porsche": ["Panamera", "Macan"], "Bentley": ["舊款(2017)", "新款"], "Rolls-Royce": ["Ghost 古斯特", "Phantom 幻影"], "Lexus": ["LM 300h"], "Toyota": ["Alphard"]}, modelPick = '';
   function modelSync(){
     var box = $('modelChips'), inp = $('model'), L = MODEL_OPTS[brand] || [], v = inp.value.trim();
     if (!L.length){ box.hidden = true; inp.hidden = false; modelPick = ''; return; }
@@ -327,6 +332,8 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     if (!brand) errs.brand = '請選廠牌';
     else if (brand === '其他' && !val('brandOther')) { errs.brand = '請填其他進口車廠牌'; $('brandOther').classList.add('bad'); }
     if (!val('model')) errs.model = modelPick === '其他' || !(MODEL_OPTS[brand] || []).length ? '請填車款' : '請選車款';
+    var yr = +val('year'), ny = new Date().getFullYear();
+    if (!(yr >= 1990 && yr <= ny + 1)) errs.year = '請填 4 位數出廠年份（例：2022）';
     if (!/^([2-9]|1[0-9])$/.test(val('seats'))) errs.seats = '請填 2～19 的數字';
     if (!val('color')) errs.color = '請填車色';
     if (!val('emName')) errs.emName = '請填緊急聯絡人稱呼';
@@ -351,7 +358,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     if (!check()) return;
     $('go').disabled = true; $('go').textContent = '送出中…';
     post({ action: 'wedLiff', op: 'save', idToken: idToken, disp: disp,
-      card: { name: val('name'), phone: val('phone'), area: areaText(), zodiac: zodiac, plate: val('plate').toUpperCase(), brand: brandText(), model: val('model'), seats: val('seats'), color: val('color'),
+      card: { name: val('name'), phone: val('phone'), area: areaText(), zodiac: zodiac, plate: val('plate').toUpperCase(), brand: brandText(), model: val('model'), year: val('year'), seats: val('seats'), color: val('color'),
         wrap: yn.wrap, wrapNote: val('wrapNote'), mod: yn.mod, modNote: val('modNote'), emName: val('emName'), emPhone: val('emPhone'), emRel: val('emRel') } })
       .then(function(j){
         if (!j || !j.ok) throw new Error((j && j.error) || '送出失敗，請再試一次');
@@ -378,7 +385,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     bound = !!j.bound; photos = j.photos || []; ins = j.ins || [];
     var c = j.card;
     if (c){
-      ['name','phone','plate','model','seats','color','emName','emPhone','emRel'].forEach(function(k){ $(k).value = c[k] || ''; if ($(k)._sync) $(k)._sync(); });
+      ['name','phone','plate','model','year','seats','color','emName','emPhone','emRel'].forEach(function(k){ $(k).value = c[k] || ''; if ($(k)._sync) $(k)._sync(); });
       areaLoad(c.area);
       if (c.zodiac) setZodiac(c.zodiac);
       if (c.brand){ if (BRANDS.indexOf(c.brand) >= 0) setBrand(c.brand); else { setBrand('其他'); $('brandOther').value = c.brand; } }

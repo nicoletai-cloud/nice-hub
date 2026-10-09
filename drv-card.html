@@ -225,7 +225,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   function brandText(){ return brand === '其他' ? val('brandOther') : brand; }
 
   // 車款：官網有標價的車款用按鈕選，沒有的選「其他」自己填
-  var MODEL_OPTS = {"Tesla": ["Model 3", "Model Y", "Model S", "Model X"], "Benz": ["W222", "Vito 九人座"], "Toyota": ["Alphard 豪華七人座"], "Lexus": ["LM 豪華七人座"]}, modelPick = '';
+  var MODEL_OPTS = {"Tesla": ["Model X", "Model S", "Model Y", "煥新 Model Y", "Model 3", "新款 Model 3"], "Benz": ["W222", "Vito 九人座"], "Toyota": ["Alphard 豪華七人座"], "Lexus": ["LM 豪華七人座"]}, modelPick = '';
   function modelSync(){
     var box = $('modelChips'), inp = $('car'), L = MODEL_OPTS[brand] || [], v = inp.value.trim();
     if (!L.length){ box.hidden = true; inp.hidden = false; modelPick = ''; return; }
