@@ -72,6 +72,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   <div class="state" id="loading">讀取中…</div>
   <div class="note warn" id="fatal" hidden></div>
 
+  <button type="button" class="go" id="toDocsTop" hidden style="margin:0 0 18px;background:#fff;color:inherit;border:1.5px solid currentColor">📄 上傳／更新證件（駕照、行照、保險單、車輛照片）</button>
   <form id="f" hidden novalidate>
     <div class="field">
       <label for="name">姓名<small>請填駕照上的全名</small></label>
@@ -398,6 +399,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     }).catch(function(err){ fatal(err && err.message ? err.message : '讀取失敗'); });
   }
   $('toDocs').addEventListener('click', openDocs);
+  $('toDocsTop').addEventListener('click', function(){ $('toDocsTop').hidden = true; openDocs(); });
   function wantDocs(){
     var q = location.search || '';
     try { var st = new URLSearchParams(q).get('liff.state'); if (st) q += '&' + decodeURIComponent(st).replace(/^\?/, ''); } catch (x) {}
@@ -429,6 +431,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       showBank();
       $('name').readOnly = true;
       goLabel = '送出更新'; $('go').textContent = goLabel;
+      $('toDocsTop').hidden = false;
     }
     $('loading').hidden = true; $('f').hidden = false;
   }).catch(function(err){ fatal(err && err.message ? err.message : '讀取失敗，請關掉後重新開啟'); });
