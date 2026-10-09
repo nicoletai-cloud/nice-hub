@@ -39,6 +39,21 @@ button.go:disabled{opacity:.6}
 .done .big{font-size:52px;line-height:1}
 .done h2{margin:10px 0 6px}
 .done p{color:var(--muted);margin:0 0 20px;white-space:pre-line}
+.drow,.ditem{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0}
+.drow .lb,.ditem .lb{flex:1;font-weight:600}
+.drow .st,.ditem .st{font-size:14px;color:var(--muted)}
+.drow .st.ok,.ditem .st.ok{color:var(--ok)}
+.pick{font:inherit;font-size:15px;border:1px solid var(--accent);color:var(--accent);background:transparent;border-radius:999px;padding:6px 14px;min-height:38px;cursor:pointer;white-space:nowrap}
+.pick:disabled{opacity:.5}
+.del{font:inherit;font-size:14px;border:0;background:transparent;color:var(--warn);cursor:pointer;padding:6px}
+.ck{display:flex;gap:8px;align-items:center;font-weight:400;margin:6px 0}
+.ck input{width:22px;height:22px;min-height:0}
+.dates{display:grid;gap:10px}
+.dates label{display:grid;gap:4px}
+.dates small{font-weight:400;color:var(--muted)}
+.tnote{color:var(--muted);font-size:13px;margin:10px 0 0}
+button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent);margin-top:10px}
+#docs .sec{margin-top:18px}
 [hidden]{display:none!important}
 </style>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js" charset="utf-8"></script>
@@ -116,11 +131,37 @@ button.go:disabled{opacity:.6}
     <button type="submit" class="go" id="go">送出車卡</button>
   </form>
 
+  <div id="docs" hidden>
+    <div class="note ok" id="dOk" hidden>✅ 證件都齊了，謝謝！換新證件時再回來更新就好。</div>
+    <div class="note warn" id="dMiss" hidden></div>
+    <div class="sec">駕照<small>正面、反面各一張</small></div>
+    <div class="drow" data-k="licF"></div><div class="drow" data-k="licB"></div>
+    <div class="sec">行照<small>正面、反面各一張</small></div>
+    <div class="drow" data-k="regF"></div><div class="drow" data-k="regB"></div>
+    <div class="sec">保險單<small>強制險、任意險都要；兩張合在一起也可以，最多 5 個檔案</small></div>
+    <div class="dmulti" data-k="ins"></div>
+    <label class="ck"><input type="checkbox" id="insC1">已上傳的保單包含<b>強制險</b></label>
+    <label class="ck"><input type="checkbox" id="insC2">已上傳的保單包含<b>任意險</b></label>
+    <div class="sec">車輛外觀照片<small>1～3 張，看得到車頭和車牌</small></div>
+    <div class="dmulti" data-k="car"></div>
+    <div class="sec">證件到期日<small>到期前 30 天、7 天會提醒你</small></div>
+    <div class="dates">
+      <label>駕照到期日<input type="date" id="exp_lic"></label>
+      <label>行照到期日<small>（行照上的有效日期）</small><input type="date" id="exp_reg"></label>
+      <label>強制險到期日<input type="date" id="exp_ins1"></label>
+      <label>任意險到期日<input type="date" id="exp_ins2"></label>
+    </div>
+    <div class="note warn" id="dErr" hidden></div>
+    <button type="button" class="go" id="dSave">儲存</button>
+    <p class="tnote">證件只存在好好禮車的雲端資料夾，只用來確認合法接案。</p>
+  </div>
+
   <div class="done" id="done" hidden>
     <div class="big">✅</div>
     <h2 id="doneTitle">綁定完成</h2>
     <p id="doneMsg"></p>
-    <button type="button" class="go" id="close">回到聊天室</button>
+    <button type="button" class="go" id="toDocs" hidden>下一步：上傳證件</button>
+    <button type="button" class="go ghost" id="close">回到聊天室</button>
   </div>
 </div>
 <script>
@@ -228,13 +269,94 @@ button.go:disabled{opacity:.6}
         if (!j.done){ $('srvErr').hidden = false; $('srvErr').textContent = (j.msg || '資料有誤，請檢查後再送出').split('\n')[0]; return; }
         $('f').hidden = true; $('done').hidden = false;
         $('doneTitle').textContent = bound ? '車卡已更新' : '綁定完成';
-        $('doneMsg').textContent = bound ? '資料已更新，謝謝！' : '之後接單不用再填資料。\n車子或電話有變，再從選單按「綁定車卡」修改就好。';
+        $('doneMsg').textContent = bound ? '資料已更新，謝謝！' : '之後接單不用再填資料。\n車子或電話有變，再從選單按「綁定車卡」修改就好。\n\n接下來請上傳駕照、行照、保險單和車輛照片。';
+        $('toDocs').hidden = false;
         try { if (liff.isInClient()) liff.sendMessages([{ type: 'text', text: bound ? '✅ 資料已用表單更新' : '✅ 資料已用表單送出' }]).catch(function(){}); } catch (x) {}
       })
       .catch(function(err){ $('srvErr').hidden = false; $('srvErr').textContent = err.message || String(err); })
       .then(function(){ $('go').disabled = false; $('go').textContent = goLabel; });
   });
   $('close').addEventListener('click', function(){ try { liff.closeWindow(); } catch (x) {} });
+
+  /* ---------- 證件上傳 ---------- */
+  var DK = { licF: '駕照正面', licB: '駕照反面', regF: '行照正面', regB: '行照反面', ins: '保險單', car: '車輛外觀' }, DMAX = { ins: 5, car: 3 };
+  var dFiles = {}, dBusy = false;
+  function md(t){ var d = new Date(+t); return (d.getMonth() + 1) + '/' + d.getDate(); }
+  function pickBtn(k, label){ return '<label class="pick"><input type="file" accept="image/*,application/pdf" data-up="' + k + '" hidden>' + label + '</label>'; }
+  function renderDocs(j){
+    dFiles = j.files || {};
+    document.querySelectorAll('.drow').forEach(function(el){
+      var k = el.getAttribute('data-k'), f = (dFiles[k] || [])[0];
+      el.innerHTML = '<span class="lb">' + DK[k] + '</span><span class="st' + (f ? ' ok' : '') + '">' + (f ? '✓ 已上傳 ' + md(f.at) : '未上傳') + '</span>' + pickBtn(k, f ? '重新上傳' : '拍照／選檔');
+    });
+    document.querySelectorAll('.dmulti').forEach(function(el){
+      var k = el.getAttribute('data-k'), L = dFiles[k] || [];
+      el.innerHTML = L.map(function(f, i){ return '<div class="ditem"><span class="lb">' + DK[k] + ' ' + (i + 1) + '</span><span class="st ok">✓ ' + md(f.at) + '</span><button type="button" class="del" data-del="' + k + '|' + f.id + '">刪除</button></div>'; }).join('') +
+        (L.length < DMAX[k] ? '<div class="ditem"><span class="lb">' + (L.length ? '再加一個' : DK[k]) + '</span><span class="st">' + L.length + ' / ' + DMAX[k] + '</span>' + pickBtn(k, '拍照／選檔') + '</div>' : '');
+    });
+    $('insC1').checked = !!dFiles.insC1; $('insC2').checked = !!dFiles.insC2;
+    var d = j.docs || {}, e = d.exp || {};
+    ['lic','reg','ins1','ins2'].forEach(function(k){ if (e[k] && !$('exp_' + k).value) $('exp_' + k).value = e[k]; });
+    $('dOk').hidden = !d.ok; $('dMiss').hidden = !!d.ok || !(d.miss || []).length;
+    $('dMiss').textContent = '還缺：' + (d.miss || []).join('、');
+  }
+  function shrink(file){
+    return new Promise(function(res){
+      if (!/^image\//.test(file.type) || /heic|heif/i.test(file.type)) return res(file);
+      var img = new Image(), url = URL.createObjectURL(file);
+      img.onload = function(){ var M = 1800, w = img.naturalWidth, h = img.naturalHeight, r = Math.min(1, M / Math.max(w, h));
+        var c = document.createElement('canvas'); c.width = Math.round(w * r); c.height = Math.round(h * r); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url); c.toBlob(function(b){ res(b && b.size < file.size ? b : file); }, 'image/jpeg', 0.82); };
+      img.onerror = function(){ URL.revokeObjectURL(url); res(file); };
+      img.src = url;
+    });
+  }
+  function b64(blob){ return new Promise(function(res, rej){ var fr = new FileReader(); fr.onload = function(){ res(String(fr.result).split(',')[1] || ''); }; fr.onerror = rej; fr.readAsDataURL(blob); }); }
+  function dErr(m){ $('dErr').hidden = !m; $('dErr').textContent = m || ''; }
+  document.addEventListener('change', function(e){
+    var k = e.target.getAttribute && e.target.getAttribute('data-up'); if (!k || !e.target.files || !e.target.files[0]) return;
+    var file = e.target.files[0]; e.target.value = '';
+    if (dBusy) return; dBusy = true; dErr('');
+    var lab = e.target.parentNode; lab.lastChild.textContent = '上傳中…';
+    shrink(file).then(function(b){ if (b.size > 9 * 1024 * 1024) throw new Error('檔案太大（超過 9MB），請改拍照上傳');
+      var mime = b.type || file.type || 'image/jpeg'; return b64(b).then(function(s){ return post({ action: 'drvLiff', op: 'upload', idToken: idToken, kind: k, mime: mime, b64: s }); }); })
+      .then(function(j){ if (!j || !j.ok) throw new Error((j && j.error) || '上傳失敗，請再試一次'); renderDocs(j); })
+      .catch(function(err){ dErr(err.message || String(err)); lab.lastChild.textContent = '再試一次'; })
+      .then(function(){ dBusy = false; });
+  });
+  document.addEventListener('click', function(e){
+    var b = e.target.closest && e.target.closest('[data-del]'); if (!b || dBusy) return;
+    var p = b.getAttribute('data-del').split('|'); dBusy = true; b.textContent = '刪除中…';
+    post({ action: 'drvLiff', op: 'docdel', idToken: idToken, kind: p[0], id: p[1] }).then(function(j){ if (!j || !j.ok) throw new Error((j && j.error) || '刪除失敗'); renderDocs(j); })
+      .catch(function(err){ dErr(err.message || String(err)); }).then(function(){ dBusy = false; });
+  });
+  $('dSave').addEventListener('click', function(){
+    if (dBusy) return; dErr('');
+    var n = function(k){ return (dFiles[k] || []).length; };
+    if (n('ins') && !$('insC1').checked && !$('insC2').checked) return dErr('請勾選已上傳的保單包含哪些險種');
+    dBusy = true; $('dSave').textContent = '儲存中…';
+    post({ action: 'drvLiff', op: 'docsave', idToken: idToken, insC1: $('insC1').checked, insC2: $('insC2').checked,
+      exp: { lic: $('exp_lic').value, reg: $('exp_reg').value, ins1: $('exp_ins1').value, ins2: $('exp_ins2').value } })
+      .then(function(j){ if (!j || !j.ok) throw new Error((j && j.error) || '儲存失敗'); renderDocs(j);
+        if (j.docs && j.docs.ok){ $('docs').hidden = true; $('done').hidden = false; $('toDocs').hidden = true; $('doneTitle').textContent = '證件已上傳完成';
+          $('doneMsg').textContent = '謝謝！證件換新時，再從選單按「上傳證件」更新就好。'; try { if (liff.isInClient()) liff.sendMessages([{ type: 'text', text: '✅ 證件已上傳完成' }]).catch(function(){}); } catch (x) {} }
+        else { window.scrollTo(0, 0); } })
+      .catch(function(err){ dErr(err.message || String(err)); }).then(function(){ dBusy = false; $('dSave').textContent = '儲存'; });
+  });
+  function openDocs(){
+    $('f').hidden = true; $('done').hidden = true; $('loading').hidden = false;
+    $('title').textContent = '上傳證件'; $('lead').textContent = '用手機直接拍照就可以，每一項上傳後會顯示 ✓。';
+    return post({ action: 'drvLiff', op: 'docs', idToken: idToken }).then(function(j){
+      if (!j || !j.ok) throw new Error((j && j.error) || '讀取失敗，請關掉後重新開啟');
+      renderDocs(j); $('loading').hidden = true; $('docs').hidden = false;
+    }).catch(function(err){ fatal(err && err.message ? err.message : '讀取失敗'); });
+  }
+  $('toDocs').addEventListener('click', openDocs);
+  function wantDocs(){
+    var q = location.search || '';
+    try { var st = new URLSearchParams(q).get('liff.state'); if (st) q += '&' + decodeURIComponent(st).replace(/^\?/, ''); } catch (x) {}
+    return /(^|[?&])p=docs\b/.test(q);
+  }
 
   fetch(BOT + '?action=drvLiffCfg').then(function(r){ return r.json(); }).then(function(c){
     if (!c || !c.liffId) throw new Error('車卡表單還沒設定完成，請回聊天室用文字格式填寫。');
@@ -243,6 +365,7 @@ button.go:disabled{opacity:.6}
     if (!liff.isLoggedIn()){ liff.login({ redirectUri: location.href }); return null; }
     idToken = liff.getIDToken() || '';
     return liff.getProfile().then(function(p){ disp = p.displayName || ''; }, function(){}).then(function(){
+      if (wantDocs()) return openDocs().then(function(){ return null; });
       return post({ action: 'drvLiff', op: 'load', idToken: idToken });
     });
   }).then(function(j){
