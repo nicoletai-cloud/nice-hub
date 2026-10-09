@@ -74,7 +74,7 @@ button.go:disabled{opacity:.6}
     </div>
     <div class="field"><label class="q">主要聯絡人<b>*</b></label><div class="help">其他聯絡人請填寫姓名</div>
       <div class="chips" id="roleChips" data-pick="role"><button type="button" class="chip">新郎</button><button type="button" class="chip">新娘</button><button type="button" class="chip" data-other>其他</button></div>
-      <input id="roleOther" class="sub" placeholder="聯絡人姓名" hidden>
+      <div id="roleOtherBox" class="row2 sub" hidden><input id="roleOther" placeholder="聯絡人姓名"><input id="roleRel" placeholder="身份，例如：新郎媽媽、婚顧"></div>
     </div>
     <div class="field"><label class="q" for="phone">主要聯絡人電話<b>*</b></label><div class="help">請填寫婚禮當天方便聯繫的主要聯絡人手機號碼。</div><input id="phone" type="tel" inputmode="tel" autocomplete="tel" data-req placeholder="09xxxxxxxx"></div>
 
@@ -146,8 +146,9 @@ button.go:disabled{opacity:.6}
       var b = e.target.closest('.chip'); if (!b) return;
       var on = b.getAttribute('aria-pressed') === 'true';
       Array.prototype.forEach.call(g.querySelectorAll('.chip'), function(c){ c.setAttribute('aria-pressed', 'false'); });
-      if (on){ pick[key] = ''; if (other) other.hidden = true; }
-      else { b.setAttribute('aria-pressed', 'true'); pick[key] = b.hasAttribute('data-other') ? '__other' : b.textContent.trim(); if (other){ other.hidden = !b.hasAttribute('data-other'); if (!other.hidden) other.focus(); } }
+      var ob = key === 'role' ? $('roleOtherBox') : other;
+      if (on){ pick[key] = ''; if (ob) ob.hidden = true; }
+      else { b.setAttribute('aria-pressed', 'true'); pick[key] = b.hasAttribute('data-other') ? '__other' : b.textContent.trim(); if (ob){ ob.hidden = !b.hasAttribute('data-other'); if (!ob.hidden && other) other.focus(); } }
       g.classList.remove('bad'); if (key === 'o1L' || key === 'o2L') renderRoute();
     });
     if (other) other.addEventListener('input', renderRoute);
@@ -189,9 +190,10 @@ button.go:disabled{opacity:.6}
     for (var i = 0; i < req.length; i++){ if (!req[i].value.trim()){ var lb = document.querySelector('label[for="' + req[i].id + '"]'); return fail('請填寫：' + (lb ? lb.textContent.replace('*', '') : ''), req[i]); } }
     if (!/^[0-9+\-\s()]{8,20}$/.test($('phone').value.trim())) return fail('電話格式不正確', $('phone'));
     var role = val('role'); if (!role) return fail(pick.role === '__other' ? '請填寫聯絡人姓名' : '請選擇主要聯絡人', pick.role === '__other' ? $('roleOther') : $('roleChips'));
+    var rel = pick.role === '__other' ? $('roleRel').value.trim() : ''; if (pick.role === '__other' && !rel) return fail('請填寫聯絡人身份，例如新郎媽媽、婚顧', $('roleRel'));
     if (!pick.cane) return fail('請選擇車頂甘蔗固定需求', document.querySelector('[data-pick="cane"]'));
     if (!pick.deco) return fail('請選擇車頭彩安排', document.querySelector('[data-pick="deco"]'));
-    var body = { action: 'wedForm', hp: $('hp').value, no: $('no').value.trim(), groom: $('groom').value.trim(), bride: $('bride').value.trim(), role: role, phone: $('phone').value.trim(),
+    var body = { action: 'wedForm', hp: $('hp').value, no: $('no').value.trim(), groom: $('groom').value.trim(), bride: $('bride').value.trim(), role: role, rel: rel, phone: $('phone').value.trim(),
       start: $('start').value, end: $('end').value, meet: $('meet').value.trim(), wed: $('wed').value.trim(),
       o1: $('o1').value.trim(), o1L: val('o1L'), o2: $('o2').value.trim(), o2L: val('o2L'),
       route: later ? '行前一週確認' : route.join(' > '), note: $('note').value.trim(), cane: pick.cane, deco: pick.deco };
