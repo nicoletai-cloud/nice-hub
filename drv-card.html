@@ -72,7 +72,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   <div class="state" id="loading">讀取中…</div>
   <div class="note warn" id="fatal" hidden></div>
 
-  <button type="button" class="go" id="toDocsTop" hidden style="margin:0 0 18px;background:#fff;color:inherit;border:1.5px solid currentColor">📄 上傳／更新證件（駕照、行照、保險單、車輛照片）</button>
+  <div class="note warn" id="docBanner" hidden style="margin:0 0 16px;cursor:pointer"></div>
   <form id="f" hidden novalidate>
     <div class="field">
       <label for="name">姓名<small>請填駕照上的全名</small></label>
@@ -145,6 +145,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   </form>
 
   <div id="docs" hidden>
+    <h2 style="margin:28px 0 4px;font-size:20px">證件</h2>
     <div class="note ok" id="dOk" hidden>✅ 證件都齊了，謝謝！換新證件時再回來更新就好。</div>
     <div class="note warn" id="dMiss" hidden></div>
     <div class="sec">駕照<small>正面一張</small></div>
@@ -322,7 +323,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
         $('f').hidden = true; $('done').hidden = false; $('ownLine').hidden = true;
         $('doneTitle').textContent = bound ? '車卡已更新' : '綁定完成';
         $('doneMsg').textContent = bound ? '資料已更新，謝謝！' : '之後接單不用再填資料。\n車子或電話有變，再從選單按「綁定車卡」修改就好。\n\n接下來請上傳駕照、行照、保險單和車輛照片。';
-        $('toDocs').hidden = false;
+        $('toDocs').hidden = true; bound = true; loadDocsBelow().then(function(){ $('docs').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
         try { if (liff.isInClient()) liff.sendMessages([{ type: 'text', text: bound ? '✅ 資料已用表單更新' : '✅ 資料已用表單送出' }]).catch(function(){}); } catch (x) {}
       })
       .catch(function(err){ $('srvErr').hidden = false; $('srvErr').textContent = err.message || String(err); })
@@ -348,6 +349,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     });
     var d = j.docs || {};
     $('dOk').hidden = !d.ok; $('dMiss').hidden = !!d.ok || !(d.miss || []).length;
+    if (!$('f').hidden){ $('docBanner').hidden = !!d.ok; if (!d.ok) $('docBanner').innerHTML = '📄 還有證件沒上傳：<b>' + (d.miss || []).join('、') + '</b><br><small>請往下滑到「證件」上傳，補齊後才能正常接單 ↓</small>'; }
     $('dMiss').textContent = '還缺：' + (d.miss || []).join('、');
   }
   function shrink(file){
@@ -385,7 +387,8 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     dBusy = true; $('dSave').textContent = '儲存中，請稍等…';
     post({ action: 'drvLiff', op: 'docsave', idToken: idToken })
       .then(function(j){ if (!j || !j.ok) throw new Error((j && j.error) || '儲存失敗'); renderDocs(j);
-        if (j.docs && j.docs.ok){ $('docs').hidden = true; $('done').hidden = false; $('toDocs').hidden = true; $('doneTitle').textContent = '證件已上傳完成';
+        $('docBanner').hidden = !!(j.docs && j.docs.ok);
+        if (j.docs && j.docs.ok){ $('f').hidden = true; $('docs').hidden = true; $('done').hidden = false; $('toDocs').hidden = true; $('doneTitle').textContent = '證件已上傳完成';
           $('doneMsg').textContent = '謝謝！證件換新時，再傳「上傳證件」更新就好。'; try { if (liff.isInClient()) liff.sendMessages([{ type: 'text', text: '✅ 證件已上傳完成' }]).catch(function(){}); } catch (x) {} }
         else { window.scrollTo(0, 0); } })
       .catch(function(err){ dErr(err.message || String(err)); }).then(function(){ dBusy = false; $('dSave').textContent = '儲存'; });
@@ -399,7 +402,17 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     }).catch(function(err){ fatal(err && err.message ? err.message : '讀取失敗'); });
   }
   $('toDocs').addEventListener('click', openDocs);
-  $('toDocsTop').addEventListener('click', function(){ $('toDocsTop').hidden = true; openDocs(); });
+  $('docBanner').addEventListener('click', function(){ $('docs').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+  // 同一個畫面：車卡資料在上、證件在下（像禮車助手），缺件時最上面提醒
+  function loadDocsBelow(){
+    return post({ action: 'drvLiff', op: 'docs', idToken: idToken }).then(function(j){
+      if (!j || !j.ok) return;
+      renderDocs(j); $('docs').hidden = false;
+      var d = j.docs || {}, miss = d.miss || [];
+      $('docBanner').hidden = !!d.ok;
+      if (!d.ok) $('docBanner').innerHTML = '📄 還有證件沒上傳：<b>' + miss.join('、') + '</b><br><small>請往下滑到「證件」上傳，補齊後才能正常接單 ↓</small>';
+    }).catch(function(){});
+  }
   function wantDocs(){
     var q = location.search || '';
     try { var st = new URLSearchParams(q).get('liff.state'); if (st) q += '&' + decodeURIComponent(st).replace(/^\?/, ''); } catch (x) {}
@@ -431,7 +444,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       showBank();
       $('name').readOnly = true;
       goLabel = '送出更新'; $('go').textContent = goLabel;
-      $('toDocsTop').hidden = false;
+      loadDocsBelow();
     }
     $('loading').hidden = true; $('f').hidden = false;
   }).catch(function(err){ fatal(err && err.message ? err.message : '讀取失敗，請關掉後重新開啟'); });
