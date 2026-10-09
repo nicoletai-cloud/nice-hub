@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>禮車車卡｜好好禮車</title>
+<style>
+:root{--bg:#f8f5f0;--surface:#fff;--fg:#2f2a24;--muted:#7a7066;--line:#e4dbce;--accent:#8a6d43;--accent-ink:#fff;--warn:#b4532a;--warn-soft:#fbeee6;--ok:#2f7d4f;--ok-soft:#e8f4ec}
+@media (prefers-color-scheme:dark){:root{--bg:#1d1a17;--surface:#26221e;--fg:#f1ebe3;--muted:#b3a899;--line:#3b352e;--accent:#c9a46b;--accent-ink:#1d1a17;--warn:#f0a07a;--warn-soft:#3a2a22;--ok:#7fc79a;--ok-soft:#1f3328}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.6 -apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif}
+.wrap{max-width:520px;margin:0 auto;padding:20px 16px calc(28px + env(safe-area-inset-bottom))}
+.brand{color:var(--accent);font-weight:700;letter-spacing:.08em;font-size:15px}
+h1{font-size:24px;margin:2px 0 4px}
+.lead{color:var(--muted);margin:0 0 18px;font-size:15px}
+form{display:grid;gap:16px}
+.field{display:grid;gap:6px}
+label{font-weight:600}
+label small{font-weight:400;color:var(--muted);margin-left:6px}
+input{font:inherit;font-size:18px;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;min-height:48px;width:100%}
+input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+input[readonly]{background:transparent;color:var(--muted)}
+input.bad{border-color:var(--warn);background:var(--warn-soft)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:inherit;font-size:15px;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 14px;min-height:38px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.err{color:var(--warn);font-size:14px;min-height:0}
+.hint{font-size:15px;color:var(--ok);min-height:0}
+.hint.warn{color:var(--warn)}
+.sec{font-weight:700;font-size:18px;border-top:1px solid var(--line);padding-top:16px;margin-top:4px}
+.sec small{display:block;font-weight:400;font-size:14px;color:var(--muted)}
+button.go{font:inherit;font-weight:700;font-size:18px;color:var(--accent-ink);background:var(--accent);border:0;border-radius:12px;min-height:52px;width:100%;cursor:pointer;margin-top:4px}
+button.go:disabled{opacity:.6}
+.note{border-radius:12px;padding:14px 16px;white-space:pre-line}
+.note.warn{background:var(--warn-soft);color:var(--warn)}
+.note.ok{background:var(--ok-soft);color:var(--ok)}
+.state{text-align:center;color:var(--muted);padding:48px 0}
+.done{text-align:center;padding:36px 0}
+.done .big{font-size:52px;line-height:1}
+.done h2{margin:10px 0 6px}
+.done p{color:var(--muted);margin:0 0 20px;white-space:pre-line}
+.drow,.ditem{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0}
+.drow .lb,.ditem .lb{flex:1;font-weight:600}
+.drow .st,.ditem .st{font-size:14px;color:var(--muted)}
+.drow .st.ok,.ditem .st.ok{color:var(--ok)}
+.pick{font:inherit;font-size:15px;border:1px solid var(--accent);color:var(--accent);background:transparent;border-radius:999px;padding:6px 14px;min-height:38px;cursor:pointer;white-space:nowrap}
+.pick:disabled{opacity:.5}
+.del{font:inherit;font-size:14px;border:0;background:transparent;color:var(--warn);cursor:pointer;padding:6px}
+.ck{display:flex;gap:8px;align-items:center;font-weight:400;margin:6px 0}
+.ck input{width:22px;height:22px;min-height:0}
+.dates{display:grid;gap:10px}
+.dates label{display:grid;gap:4px}
+.dates small{font-weight:400;color:var(--muted)}
+.tnote{color:var(--muted);font-size:13px;margin:10px 0 0}
+button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent);margin-top:10px}
+#docs .sec{margin-top:18px}
+[hidden]{display:none!important}
+</style>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js" charset="utf-8"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">好好禮車 禮車助手</div>
+  <h1 id="title">填寫禮車車卡</h1>
+  <p class="lead" id="lead">填好按送出就完成綁定，之後派車不用再填資料。</p>
+
+  <div class="state" id="loading">讀取中…</div>
+  <div class="note warn" id="fatal" hidden></div>
+
+  <form id="f" hidden novalidate>
+    <div class="field">
+      <label for="name">姓名<small>請填本名（駕照上的全名）</small></label>
+      <input id="name" autocomplete="name" maxlength="20" placeholder="例：王大明" required>
+      <div class="err" id="e-name"></div>
+    </div>
+    <div class="field">
+      <label for="phone">手機號碼</label>
+      <input id="phone" type="tel" inputmode="numeric" autocomplete="tel" maxlength="12" placeholder="09xxxxxxxx" required>
+      <div class="err" id="e-phone"></div>
+    </div>
+    <div class="field">
+      <label for="area">居住地區<small>縣市＋區，例：台中市北屯區</small></label>
+      <input id="area" maxlength="20" placeholder="例：台中市北屯區" required>
+      <div class="err" id="e-area"></div>
+    </div>
+    <div class="field">
+      <label>生肖</label>
+      <div class="chips" id="zodiacChips"></div>
+      <div class="err" id="e-zodiac"></div>
+    </div>
+    <div class="sec">車輛資料</div>
+    <div class="field">
+      <label for="plate">車牌<small>例：RED-7380</small></label>
+      <input id="plate" autocapitalize="characters" maxlength="10" required>
+      <div class="err" id="e-plate"></div>
+    </div>
+    <div class="field">
+      <label>廠牌</label>
+      <div class="chips" id="brandChips">
+        <button type="button" class="chip">Tesla</button><button type="button" class="chip">Benz</button><button type="button" class="chip">BMW</button><button type="button" class="chip">Lexus</button><button type="button" class="chip">Toyota</button><button type="button" class="chip">其他</button>
+      </div>
+      <input id="brandOther" maxlength="15" placeholder="其他進口車廠牌（例：Volvo）" hidden>
+      <div class="err" id="e-brand"></div>
+    </div>
+    <div class="field">
+      <label for="model">車款</label>
+      <input id="model" maxlength="25" placeholder="例：Model Y" required>
+      <div class="err" id="e-model"></div>
+    </div>
+    <div class="field">
+      <label for="seats">座位數<small>含司機</small></label>
+      <div class="chips" data-for="seats">
+        <button type="button" class="chip">5</button><button type="button" class="chip">7</button><button type="button" class="chip">9</button>
+      </div>
+      <input id="seats" type="number" inputmode="numeric" min="2" max="19" placeholder="例：5" required>
+      <div class="err" id="e-seats"></div>
+    </div>
+    <div class="field">
+      <label for="color">車色</label>
+      <input id="color" maxlength="10" placeholder="例：白色" required>
+      <div class="err" id="e-color"></div>
+    </div>
+    <div class="field">
+      <label>包膜</label>
+      <div class="chips yn" data-yn="wrap"><button type="button" class="chip">有</button><button type="button" class="chip">無</button></div>
+      <input id="wrapNote" maxlength="60" placeholder="說明，例：全車消光黑包膜" hidden>
+      <div class="err" id="e-wrap"></div>
+    </div>
+    <div class="field">
+      <label>改裝</label>
+      <div class="chips yn" data-yn="mod"><button type="button" class="chip">有</button><button type="button" class="chip">無</button></div>
+      <input id="modNote" maxlength="60" placeholder="說明，例：改輪框、降低車身" hidden>
+      <div class="err" id="e-mod"></div>
+    </div>
+    <div class="sec">車輛外觀照片<small>1～3 張，拍得到車頭和車牌</small></div>
+    <div id="photos"></div>
+    <div class="err" id="e-photos"></div>
+    <div class="note warn" id="srvErr" hidden></div>
+    <button type="submit" class="go" id="go">送出車卡</button>
+    <p class="tnote">資料只給好好禮車派車使用。</p>
+  </form>
+
+  <div class="done" id="done" hidden>
+    <div class="big">✅</div>
+    <h2 id="doneTitle">綁定完成</h2>
+    <p id="doneMsg"></p>
+    <button type="button" class="go ghost" id="close">回到聊天室</button>
+  </div>
+</div>
+<script>
+(function(){
+  var BOT = 'https://script.google.com/macros/s/AKfycbwoKk13j5YOtkA5cTh3FtvECekYm0uMBPsid1H--kB7bhUVpDFvSnSA0iTzCfc8IT11_Q/exec';
+  var LIFF_ID = '2011949076-1fqUEtE2';
+  var $ = function(id){ return document.getElementById(id); };
+  var idToken = '', disp = '', bound = false, goLabel = '送出車卡', photos = [], busy = false;
+  var FIELDS = ['name','phone','area','plate','model','seats','color'];
+  var ZOD = ['鼠','牛','虎','兔','龍','蛇','馬','羊','猴','雞','狗','豬'], zodiac = '', yn = { wrap: null, mod: null };
+
+  function fatal(msg){ $('loading').hidden = true; $('f').hidden = true; $('fatal').hidden = false; $('fatal').textContent = msg; }
+  function post(body){
+    return fetch(BOT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) }).then(function(r){ return r.json(); });
+  }
+  function val(id){ return $(id).value.trim(); }
+
+  // 生肖
+  $('zodiacChips').innerHTML = ZOD.map(function(z){ return '<button type="button" class="chip">' + z + '</button>'; }).join('');
+  function setZodiac(z){ zodiac = z; $('zodiacChips').querySelectorAll('.chip').forEach(function(c){ c.setAttribute('aria-pressed', String(c.textContent === z)); }); $('e-zodiac').textContent = ''; }
+  $('zodiacChips').addEventListener('click', function(e){ var c = e.target.closest('.chip'); if (c) setZodiac(c.textContent); });
+
+  // 廠牌
+  var brand = '';
+  function setBrand(b){
+    brand = b;
+    $('brandChips').querySelectorAll('.chip').forEach(function(c){ c.setAttribute('aria-pressed', String(c.textContent === b)); });
+    $('brandOther').hidden = b !== '其他'; $('e-brand').textContent = ''; $('brandOther').classList.remove('bad');
+  }
+  $('brandChips').addEventListener('click', function(e){ var c = e.target.closest('.chip'); if (!c) return; setBrand(c.textContent); if (brand === '其他') $('brandOther').focus(); });
+  $('brandOther').addEventListener('input', function(){ $('e-brand').textContent = ''; $('brandOther').classList.remove('bad'); });
+  function brandText(){ return brand === '其他' ? val('brandOther') : brand; }
+
+  // 包膜／改裝 有無
+  function setYn(k, v){
+    yn[k] = v; var box = document.querySelector('[data-yn="' + k + '"]');
+    box.querySelectorAll('.chip').forEach(function(c){ c.setAttribute('aria-pressed', String((c.textContent === '有') === v && v !== null)); });
+    $(k + 'Note').hidden = v !== true; $('e-' + k).textContent = '';
+  }
+  document.querySelectorAll('[data-yn]').forEach(function(box){
+    box.addEventListener('click', function(e){ var c = e.target.closest('.chip'); if (!c) return; var k = box.getAttribute('data-yn'); setYn(k, c.textContent === '有'); if (yn[k]) $(k + 'Note').focus(); });
+  });
+
+  // 座位數快速選項
+  document.querySelectorAll('.chips[data-for]').forEach(function(box){
+    var input = $(box.getAttribute('data-for'));
+    function sync(){ box.querySelectorAll('.chip').forEach(function(c){ c.setAttribute('aria-pressed', String(c.textContent === input.value.trim())); }); }
+    box.addEventListener('click', function(e){
+      var c = e.target.closest('.chip'); if (!c) return;
+      input.value = (c.getAttribute('aria-pressed') === 'true') ? '' : c.textContent;
+      input.classList.remove('bad'); $('e-' + input.id).textContent = ''; sync();
+    });
+    input.addEventListener('input', sync); input._sync = sync;
+  });
+  FIELDS.forEach(function(k){ $(k).addEventListener('input', function(){ $(k).classList.remove('bad'); $('e-' + k).textContent = ''; }); });
+  $('plate').addEventListener('blur', function(){ $('plate').value = $('plate').value.toUpperCase(); });
+
+  // 外觀照片
+  function md(t){ var d = new Date(+t); return (d.getMonth() + 1) + '/' + d.getDate(); }
+  function renderPhotos(){
+    $('photos').innerHTML = photos.map(function(p, i){ return '<div class="ditem"><span class="lb">外觀照片 ' + (i + 1) + '</span><span class="st ok">✓ ' + md(p.at) + '</span><button type="button" class="del" data-del="' + p.id + '">刪除</button></div>'; }).join('') +
+      (photos.length < 3 ? '<div class="ditem"><span class="lb">' + (photos.length ? '再加一張' : '外觀照片') + '</span><span class="st">' + photos.length + ' / 3</span><label class="pick"><input type="file" accept="image/*" data-up="1" hidden>拍照／選照片</label></div>' : '');
+    if (photos.length) $('e-photos').textContent = '';
+  }
+  function shrink(file){
+    return new Promise(function(res){
+      if (!/^image\//.test(file.type) || /heic|heif/i.test(file.type)) return res(file);
+      var img = new Image(), url = URL.createObjectURL(file);
+      img.onload = function(){ var M = 1800, w = img.naturalWidth, h = img.naturalHeight, r = Math.min(1, M / Math.max(w, h));
+        var c = document.createElement('canvas'); c.width = Math.round(w * r); c.height = Math.round(h * r); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url); c.toBlob(function(b){ res(b && b.size < file.size ? b : file); }, 'image/jpeg', 0.82); };
+      img.onerror = function(){ URL.revokeObjectURL(url); res(file); };
+      img.src = url;
+    });
+  }
+  function b64(blob){ return new Promise(function(res, rej){ var fr = new FileReader(); fr.onload = function(){ res(String(fr.result).split(',')[1] || ''); }; fr.onerror = rej; fr.readAsDataURL(blob); }); }
+  document.addEventListener('change', function(e){
+    if (!e.target.getAttribute || !e.target.getAttribute('data-up') || !e.target.files || !e.target.files[0]) return;
+    var file = e.target.files[0]; e.target.value = '';
+    if (busy) return; busy = true; $('e-photos').textContent = '';
+    var lab = e.target.parentNode; lab.lastChild.textContent = '上傳中…';
+    shrink(file).then(function(b){ if (b.size > 9 * 1024 * 1024) throw new Error('照片太大（超過 9MB），請改用相機拍照');
+      var mime = b.type || file.type || 'image/jpeg'; return b64(b).then(function(s){ return post({ action: 'wedLiff', op: 'upload', idToken: idToken, disp: disp, name: val('name'), mime: mime, b64: s }); }); })
+      .then(function(j){ if (!j || !j.ok) throw new Error((j && j.error) || '上傳失敗，請再試一次'); photos = j.photos || []; renderPhotos(); })
+      .catch(function(err){ $('e-photos').textContent = err.message || String(err); lab.lastChild.textContent = '再試一次'; })
+      .then(function(){ busy = false; });
+  });
+  document.addEventListener('click', function(e){
+    var b = e.target.closest && e.target.closest('[data-del]'); if (!b || busy) return;
+    busy = true; b.textContent = '刪除中…';
+    post({ action: 'wedLiff', op: 'photodel', idToken: idToken, id: b.getAttribute('data-del') })
+      .then(function(j){ if (!j || !j.ok) throw new Error((j && j.error) || '刪除失敗'); photos = j.photos || []; renderPhotos(); })
+      .catch(function(err){ $('e-photos').textContent = err.message || String(err); }).then(function(){ busy = false; });
+  });
+
+  function check(){
+    var errs = {}, phone = val('phone').replace(/[^0-9]/g, '');
+    if (!val('name')) errs.name = '請填本名';
+    else if (!/^[一-龥·．]{2,6}$|^[A-Za-z][A-Za-z.'-]*(\s+[A-Za-z][A-Za-z.'-]*)+$/.test(val('name')) || /^[小阿老][一-龥]$/.test(val('name'))) errs.name = '請填本名（駕照上的全名），不要填暱稱';
+    if (!/^09\d{8}$/.test(phone)) errs.phone = '請填 10 碼手機號碼（09 開頭）';
+    if (!val('area')) errs.area = '請填居住地區';
+    if (!zodiac) errs.zodiac = '請選生肖';
+    if (val('plate').replace(/[^A-Za-z0-9]/g, '').length < 4) errs.plate = '請填完整車牌';
+    if (!brand) errs.brand = '請選廠牌';
+    else if (brand === '其他' && !val('brandOther')) { errs.brand = '請填其他進口車廠牌'; $('brandOther').classList.add('bad'); }
+    if (!val('model')) errs.model = '請填車款';
+    if (!/^([2-9]|1[0-9])$/.test(val('seats'))) errs.seats = '請填 2～19 的數字';
+    if (!val('color')) errs.color = '請填車色';
+    if (yn.wrap === null) errs.wrap = '請選有沒有包膜'; else if (yn.wrap && !val('wrapNote')) errs.wrap = '請簡單說明包膜內容';
+    if (yn.mod === null) errs.mod = '請選有沒有改裝'; else if (yn.mod && !val('modNote')) errs.mod = '請簡單說明改裝內容';
+    if (!photos.length) errs.photos = '請至少上傳 1 張車輛外觀照片';
+    FIELDS.forEach(function(k){ $(k).classList.toggle('bad', !!errs[k]); $('e-' + k).textContent = errs[k] || ''; });
+    ['zodiac','brand','wrap','mod','photos'].forEach(function(k){ $('e-' + k).textContent = errs[k] || ''; });
+    var first = Object.keys(errs)[0];
+    if (first){ var el = FIELDS.indexOf(first) >= 0 ? $(first) : $('e-' + first); if (FIELDS.indexOf(first) >= 0) el.focus(); el.scrollIntoView({ block: 'center' }); }
+    return !first;
+  }
+
+  $('f').addEventListener('submit', function(e){
+    e.preventDefault(); $('srvErr').hidden = true;
+    if (busy){ $('srvErr').hidden = false; $('srvErr').textContent = '照片還在上傳，請稍等'; return; }
+    if (!check()) return;
+    $('go').disabled = true; $('go').textContent = '送出中…';
+    post({ action: 'wedLiff', op: 'save', idToken: idToken, disp: disp,
+      card: { name: val('name'), phone: val('phone'), area: val('area'), zodiac: zodiac, plate: val('plate').toUpperCase(), brand: brandText(), model: val('model'), seats: val('seats'), color: val('color'),
+        wrap: yn.wrap, wrapNote: val('wrapNote'), mod: yn.mod, modNote: val('modNote') } })
+      .then(function(j){
+        if (!j || !j.ok) throw new Error((j && j.error) || '送出失敗，請再試一次');
+        if (!j.done){ $('srvErr').hidden = false; $('srvErr').textContent = j.msg || '資料有誤，請檢查後再送出'; return; }
+        $('f').hidden = true; $('done').hidden = false;
+        $('doneTitle').textContent = bound ? '車卡已更新' : '綁定完成';
+        $('doneMsg').textContent = bound ? '資料已更新，謝謝！' : '謝謝！之後派車不用再填資料。\n車子或電話有變，再打開這個表單修改就好。';
+        try { if (liff.isInClient()) liff.sendMessages([{ type: 'text', text: bound ? '✅ 禮車車卡已更新' : '✅ 禮車車卡已送出' }]).catch(function(){}); } catch (x) {}
+      })
+      .catch(function(err){ $('srvErr').hidden = false; $('srvErr').textContent = err.message || String(err); })
+      .then(function(){ $('go').disabled = false; $('go').textContent = goLabel; });
+  });
+  $('close').addEventListener('click', function(){ try { liff.closeWindow(); } catch (x) {} });
+
+  // 舊車款字串拆回廠牌
+  var BRANDS = ['Tesla','Benz','BMW','Lexus','Toyota'];
+  liff.init({ liffId: LIFF_ID }).then(function(){
+    if (!liff.isLoggedIn()){ liff.login({ redirectUri: location.href }); return null; }
+    idToken = liff.getIDToken() || '';
+    return liff.getProfile().then(function(p){ disp = p.displayName || ''; }, function(){}).then(function(){ return post({ action: 'wedLiff', op: 'load', idToken: idToken }); });
+  }).then(function(j){
+    if (j === null) return;
+    if (!j || !j.ok) throw new Error((j && j.error) || '讀取失敗，請關掉後重新開啟');
+    bound = !!j.bound; photos = j.photos || [];
+    var c = j.card;
+    if (c){
+      ['name','phone','area','plate','model','seats','color'].forEach(function(k){ $(k).value = c[k] || ''; if ($(k)._sync) $(k)._sync(); });
+      if (c.zodiac) setZodiac(c.zodiac);
+      if (c.brand){ if (BRANDS.indexOf(c.brand) >= 0) setBrand(c.brand); else { setBrand('其他'); $('brandOther').value = c.brand; } }
+      if (c.saved){ setYn('wrap', !!c.wrap); setYn('mod', !!c.mod); }
+      $('wrapNote').value = c.wrapNote || ''; $('modNote').value = c.modNote || '';
+    }
+    if (bound){
+      $('title').textContent = '更新禮車車卡'; $('lead').textContent = '確認或修改下面的資料，改好按送出。';
+      $('name').readOnly = true; goLabel = '送出更新'; $('go').textContent = goLabel;
+    } else if (disp && !val('name')) $('name').placeholder = '本名（LINE 名稱：' + disp + '）';
+    renderPhotos();
+    $('loading').hidden = true; $('f').hidden = false;
+  }).catch(function(err){ fatal(err && err.message ? err.message : '讀取失敗，請關掉後重新開啟'); });
+})();
+</script>
+</body>
+</html>
