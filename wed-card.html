@@ -218,6 +218,11 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       <label>備有工具<small>可複選</small></label>
       <div class="chips" data-pick="tools" data-multi="1" data-opts="車頭彩|門把彩|甘蔗固定器"></div>
     </div>
+    <div class="field" id="decoField" hidden>
+      <label>車頭彩照片<small>請上傳你的禮車佈置車頭彩的照片，1～5 張；現在沒有可以之後再補</small></label>
+      <div id="decoBox"></div>
+      <div class="err" id="e-deco"></div>
+    </div>
     <div class="field">
       <label>對講機數量</label>
       <div class="chips" data-pick="radios" data-opts="0|1|2|3|4|5|6"></div>
@@ -240,7 +245,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   var BOT = 'https://script.google.com/macros/s/AKfycbwoKk13j5YOtkA5cTh3FtvECekYm0uMBPsid1H--kB7bhUVpDFvSnSA0iTzCfc8IT11_Q/exec';
   var LIFF_ID = '2011949076-1fqUEtE2';
   var $ = function(id){ return document.getElementById(id); };
-  var idToken = '', disp = '', bound = false, goLabel = '送出車卡', photos = [], ins = [], busy = false, cars = [], cid = '';
+  var idToken = '', disp = '', bound = false, goLabel = '送出車卡', photos = [], ins = [], deco = [], busy = false, cars = [], cid = '';
   function newCid(){ return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5); }
   var FIELDS = ['name','phone','plate','model','year','seats','color','emName','emPhone','emRel'];
   var ZOD = ['鼠','牛','虎','兔','龍','蛇','馬','羊','猴','雞','狗','豬'], zodiac = '', yn = { wrap: null, mod: null };
@@ -259,7 +264,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   // 選項按鈕（data-pick）：單選或複選，存成「、」分隔文字
   var PICK = {};
   function pickOpts(k){ var box = document.querySelector('.chips[data-pick="' + k + '"]'); return k === 'serve' ? Object.keys(TW) : box.getAttribute('data-opts').split('|'); }
-  function drawPick(k){ document.querySelectorAll('.chips[data-pick="' + k + '"] .chip').forEach(function(c){ c.setAttribute('aria-pressed', String(PICK[k].indexOf(c.textContent) >= 0)); }); }
+  function drawPick(k){ document.querySelectorAll('.chips[data-pick="' + k + '"] .chip').forEach(function(c){ c.setAttribute('aria-pressed', String(PICK[k].indexOf(c.textContent) >= 0)); }); if (k === 'tools') renderDeco(); }
   function pickText(k){ return pickOpts(k).filter(function(o){ return PICK[k].indexOf(o) >= 0; }).join('、'); }
   function setPick(k, t){ t = String(t == null ? '' : t); PICK[k] = pickOpts(k).filter(function(o){ return t === o || ('、' + t + '、').indexOf('、' + o + '、') >= 0; }); drawPick(k); }
   document.querySelectorAll('.chips[data-pick]').forEach(function(box){
@@ -359,10 +364,18 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     if (ins.length) $('e-ins').textContent = '';
   }
   function curCar(){ return cars.filter(function(c){ return c.cid === cid; })[0] || null; }
-  function setFiles(j){ if (j && j.cars) cars = j.cars; var c = curCar(); photos = (c && c.photos) || []; ins = (c && c.ins) || []; renderPhotos(); renderCarPick(); }
+  function decoNeed(){ return !!(PICK.tools && PICK.tools.indexOf('車頭彩') >= 0); }
+  function renderDeco(){
+    var f = $('decoField'); if (!f) return; var d = deco || [];
+    f.hidden = !decoNeed();
+    $('decoBox').innerHTML = d.map(function(p, i){ return '<div class="ditem"><span class="lb">車頭彩 ' + (i + 1) + '</span><span class="st ok">✓ ' + md(p.at) + '</span><button type="button" class="del" data-del="' + p.id + '" data-kind="deco">刪除</button></div>'; }).join('') +
+      (d.length < 5 ? '<div class="ditem"><span class="lb">' + (d.length ? '再加一張' : '車頭彩照片') + '</span><span class="st">' + d.length + ' / 5</span><label class="pick"><input type="file" accept="image/*" data-up="deco" hidden>拍照／選照片</label></div>' : '');
+    if (d.length) $('e-deco').textContent = '';
+  }
+  function setFiles(j){ if (j && j.person && j.person.deco) deco = j.person.deco; renderDeco(); if (j && j.cars) cars = j.cars; var c = curCar(); photos = (c && c.photos) || []; ins = (c && c.ins) || []; renderPhotos(); renderCarPick(); }
   // 一位司機可以有好幾台車：上面列出已登記的車，點一台修改，或新增一台
   function carLabel(c){ var t = [c.brand, c.model, c.plate].filter(Boolean).join(' ') || '新的一台車'; return c.saved && (!(c.photos || []).length || !(c.ins || []).length) ? t + '（待補照片）' : t; }
-  function missTxt(){ var m = []; if (!photos.length) m.push('車輛外觀照片'); if (!ins.length) m.push('保險單'); return m.length ? '\n\n還沒上傳：' + m.join('、') + '。\n之後打開這個表單，選這台車補上就好。' : ''; }
+  function missTxt(){ var m = []; if (!photos.length) m.push('車輛外觀照片'); if (!ins.length) m.push('保險單'); if (decoNeed() && !(deco || []).length) m.push('車頭彩照片'); return m.length ? '\n\n還沒上傳：' + m.join('、') + '。\n之後打開這個表單，選這台車補上就好。' : ''; }
   function renderCarPick(){
     var box = $('carPick'), saved = cars.filter(function(c){ return c.saved; });
     box.hidden = !bound || !saved.length;
@@ -416,7 +429,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   function b64(blob){ return new Promise(function(res, rej){ var fr = new FileReader(); fr.onload = function(){ res(String(fr.result).split(',')[1] || ''); }; fr.onerror = rej; fr.readAsDataURL(blob); }); }
   document.addEventListener('change', function(e){
     if (!e.target.getAttribute || !e.target.getAttribute('data-up') || !e.target.files || !e.target.files[0]) return;
-    var file = e.target.files[0], kind = e.target.getAttribute('data-up'), errEl = $(kind === 'ins' ? 'e-ins' : 'e-photos'); e.target.value = '';
+    var file = e.target.files[0], kind = e.target.getAttribute('data-up'), errEl = $(kind === 'ins' ? 'e-ins' : kind === 'deco' ? 'e-deco' : 'e-photos'); e.target.value = '';
     if (busy) return; busy = true; errEl.textContent = '';
     var lab = e.target.parentNode; lab.lastChild.textContent = '上傳中…';
     shrink(file).then(function(b){ if (b.size > 9 * 1024 * 1024) throw new Error('檔案太大（超過 9MB），請改用相機拍照');
@@ -490,7 +503,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
         $('doneMsg').textContent += missTxt();
         try { if (liff.isInClient()){
           var msgs = [{ type: 'text', text: kind === 'new' ? '✅ 禮車車卡已送出' : kind === 'car' ? '✅ 已增加支援車輛：' + val('plate').toUpperCase() : '✅ 禮車車卡已更新' }];
-          var miss = []; if (!photos.length) miss.push('車輛外觀照片'); if (!ins.length) miss.push('保險單');
+          var miss = []; if (!photos.length) miss.push('車輛外觀照片'); if (!ins.length) miss.push('保險單'); if (decoNeed() && !(deco || []).length) miss.push('車頭彩照片');
           // 缺照片：由司機自己的 LINE 傳出提醒卡（不佔官方帳號訊息數），之後點按鈕就能回來補
           if (miss.length) msgs.push({ type: 'template', altText: '📎 待補：' + miss.join('、'), template: { type: 'buttons',
             text: ('📎 ' + [brandText(), val('model'), val('plate').toUpperCase()].filter(Boolean).join(' ') + ' 待補：' + miss.join('、')).slice(0, 160),
@@ -520,7 +533,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     if (pp){
       ['name','phone','emName','emPhone','emRel'].forEach(function(k){ $(k).value = pp[k] || ''; if ($(k)._sync) $(k)._sync(); });
       areaLoad(pp.area);
-      ['serve','slots','skills','tools','radios'].forEach(function(k){ setPick(k, pp[k]); }); $('wexp').value = pp.wexp || '';
+      deco = pp.deco || []; ['serve','slots','skills','tools','radios'].forEach(function(k){ setPick(k, pp[k]); }); $('wexp').value = pp.wexp || ''; renderDeco();
       if (pp.zodiac) setZodiac(pp.zodiac);
     }
     var Q = new URLSearchParams(location.search), qCar = Q.get('car') || '', qTo = Q.get('to') || '';
@@ -532,7 +545,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     }
     loadCar(first);
     $('loading').hidden = true; $('f').hidden = false;
-    if (qTo === 'photos' && bound) setTimeout(function(){ var t = !photos.length || ins.length ? 'photos' : 'insBox'; $(t).previousElementSibling.scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 150);
+    if (qTo === 'photos' && bound) setTimeout(function(){ var t = !photos.length ? 'photos' : !ins.length ? 'insBox' : decoNeed() && !(deco || []).length ? 'decoField' : 'photos'; (t === 'decoField' ? $(t) : $(t).previousElementSibling).scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 150);
   }).catch(function(err){ fatal(err && err.message ? err.message : '讀取失敗，請關掉後重新開啟'); });
 })();
 </script>
