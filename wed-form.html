@@ -37,6 +37,15 @@ input[readonly]{background:transparent;color:var(--muted)}
 .chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .chip:disabled{opacity:.45;cursor:default}
 .sub{margin-top:8px}
+.pk{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:14px;font-weight:700;margin-right:8px;vertical-align:1px}
+.rchip{display:inline-flex;align-items:center;gap:6px}.rchip b{font-size:17px}.rchip small{font-size:13px;opacity:.75}
+.qrow{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.same{display:inline-flex;align-items:center;gap:6px;font-size:15px;color:var(--fg);cursor:pointer}
+.same input{width:18px;height:18px;min-height:0;margin:0;padding:0;border:0;box-shadow:none;outline-offset:2px;accent-color:var(--accent)}
+.stop{border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--surface)}
+.stop .rm{font:inherit;font-size:14px;background:none;border:0;color:#b4532a;cursor:pointer;padding:4px 6px}
+.addstop{font:inherit;font-size:15px;width:100%;min-height:46px;border:1.5px dashed var(--line);border-radius:14px;background:transparent;color:var(--fg);cursor:pointer}
+.addstop:disabled{opacity:.45;cursor:default}
 .route{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-height:52px;font-size:17px;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .route .ph{color:var(--muted);font-weight:400;font-size:15px}
 .route .arrow{color:var(--accent)}
@@ -87,26 +96,18 @@ button.go:disabled{opacity:.6}
       <div class="field"><label class="q" for="end">預計結束用車時間<b>*</b></label><input id="end" type="time" data-req></div>
     </div>
     <div class="note-tip" id="hoursTip" hidden></div>
-    <div class="field"><label class="q" for="meet">集合地址<b>*</b></label><input id="meet" data-req placeholder="完整地址，例如：台北市大安區和平東路二段 1 號"><div class="chips sub" data-pick="meetL"><button type="button" class="chip">男方家</button><button type="button" class="chip">女方家</button><button type="button" class="chip">飯店</button><button type="button" class="chip">新家</button><button type="button" class="chip" data-other>其他</button></div><input id="meetLOther" class="sub" placeholder="地點名稱" hidden></div>
-    <div class="field"><label class="q" for="wed">迎娶地址<b>*</b></label><input id="wed" data-req placeholder="完整地址"><div class="chips sub" data-pick="wedL"><button type="button" class="chip">女方家</button><button type="button" class="chip">男方家</button><button type="button" class="chip">飯店</button><button type="button" class="chip" data-other>其他</button></div><input id="wedLOther" class="sub" placeholder="地點名稱" hidden></div>
-    <div class="field"><label class="q" for="o1">其他停靠地址 1<small>選填</small></label><input id="o1" placeholder="完整地址"></div>
-    <div class="field" id="o1Lf"><label class="q">其他停靠地址 1 是什麼地點？<small>選填</small></label><div class="help">合約上會直接顯示地點名稱。</div>
-      <div class="chips" data-pick="o1L"><button type="button" class="chip">新家</button><button type="button" class="chip">祭祖地點</button><button type="button" class="chip">證婚地點</button><button type="button" class="chip">儀式地點</button><button type="button" class="chip">入房地點</button><button type="button" class="chip" data-other>其他</button></div>
-      <input id="o1LOther" class="sub" placeholder="地點名稱，例如：拍照景點" hidden>
-    </div>
-    <div class="field"><label class="q" for="o2">其他停靠地址 2<small>選填</small></label><input id="o2" placeholder="完整地址"></div>
-    <div class="field" id="o2Lf"><label class="q">其他停靠地址 2 是什麼地點？<small>選填</small></label><div class="help">合約上會直接顯示地點名稱。</div>
-      <div class="chips" data-pick="o2L"><button type="button" class="chip">新家</button><button type="button" class="chip">祭祖地點</button><button type="button" class="chip">證婚地點</button><button type="button" class="chip">儀式地點</button><button type="button" class="chip">入房地點</button><button type="button" class="chip" data-other>其他</button></div>
-      <input id="o2LOther" class="sub" placeholder="地點名稱" hidden>
-    </div>
+    <div class="field"><label class="q" for="meet"><span class="pk">A</span>集合地址<b>*</b></label><input id="meet" data-req placeholder="完整地址，例如：台北市大安區和平東路二段 1 號"><div class="chips sub" data-pick="meetL"><button type="button" class="chip">男方家</button><button type="button" class="chip">女方家</button><button type="button" class="chip">飯店</button><button type="button" class="chip">新家</button><button type="button" class="chip" data-other>其他</button></div><input id="meetLOther" class="sub" placeholder="地點名稱" hidden></div>
+    <div class="field"><div class="qrow"><label class="q" for="wed"><span class="pk">B</span>迎娶地址<b>*</b></label><label class="same"><input type="checkbox" id="wedSame"> 同集合地址</label></div><div id="wedBox"><input id="wed" data-req placeholder="完整地址"><div class="chips sub" data-pick="wedL"><button type="button" class="chip">女方家</button><button type="button" class="chip">男方家</button><button type="button" class="chip">飯店</button><button type="button" class="chip" data-other>其他</button></div><input id="wedLOther" class="sub" placeholder="地點名稱" hidden></div></div>
+    <div id="stops"></div>
+    <div class="field"><button type="button" class="addstop" id="addStop">＋ 新增停靠地點</button><div class="help" id="stopHelp">還有其他要停的地方（例如新家、祭祖、證婚）再新增，最多 5 個；合約上會直接顯示地點名稱。</div></div>
 
     <div class="field"><label class="q">當日流程<small>選填，可複選</small></label><div class="chips" id="dayFlow"><button type="button" class="chip" aria-pressed="false">文定</button><button type="button" class="chip" aria-pressed="false">迎娶</button><button type="button" class="chip" aria-pressed="false">祭祖</button><button type="button" class="chip" aria-pressed="false">證婚</button><button type="button" class="chip" aria-pressed="false">宴客</button></div></div>
-    <div class="field"><label class="q">禮車路線<small>選填</small></label><div class="help">依照當天的順序點選地點，例如：男方家 → 女方家 → 男方家 → 餐廳。點錯可以按「⌫ 倒退」。還不確定可以選「行前一週確認」。</div>
+    <div class="field"><label class="q">禮車路線<small>選填</small></label><div class="help">依照當天的順序點選上面的地點代號，例如：A › B › A › C。點錯可以按「⌫ 倒退」。還不確定可以選「行前一週確認」。</div>
       <div class="route" id="routeShow"><span class="ph">還沒選擇路線</span></div>
       <div class="chips sub" id="routeChips"></div>
       <div class="rtools"><button type="button" class="tool" id="rBack">⌫ 倒退</button><button type="button" class="tool" id="rClear">清除</button><button type="button" class="chip" id="rLater" aria-pressed="false">行前一週確認</button></div>
     </div>
-    <div class="field"><label class="q" for="note">行程與備註<small>選填</small></label><div class="help">可依序填寫停靠地點與預計時間；地點或行程尚未確定，可先填寫「待確認」。</div><textarea id="note" rows="3"></textarea></div>
+    <div class="field" hidden><textarea id="note"></textarea></div>
 
     <div class="sec"><h2><i>03</i>婚禮的小細節</h2><p>依照你們的儀式與喜好，確認需要的服務。</p></div>
     <div class="field"><label class="q">車頂甘蔗固定需求<b>*</b></label><div class="help">車頂固定費用為 NT$1,000／台。
@@ -116,7 +117,7 @@ button.go:disabled{opacity:.6}
     </div>
     <div class="field"><label class="q">車頭彩安排<b>*</b></label><div class="help">一般車頭彩由司機準備，無法指定款式。
 指定現有款式 NT$1,200–1,600；指定或客製化需求，請於用車前兩週私訊客服討論並完成確認。
-<a href="https://www.canva.com/design/DAHCtkIis-0/CWefKoAX5aOQ3tkdtnwt7Q/view" target="_blank" rel="noopener">查看車頭彩款式與說明</a></div>
+<a href="https://nicoletai-cloud.github.io/nice-hub/deco.html" target="_blank" rel="noopener">查看車頭彩款式與說明</a></div>
       <div class="chips" data-pick="deco"><button type="button" class="chip">希望付費指定或客製化</button><button type="button" class="chip">由司機準備一般車頭彩</button><button type="button" class="chip">待確認</button></div>
     </div>
 
@@ -152,14 +153,28 @@ button.go:disabled{opacity:.6}
       var ob = key === 'role' ? $('roleOtherBox') : other;
       if (on){ pick[key] = ''; if (ob) ob.hidden = true; }
       else { b.setAttribute('aria-pressed', 'true'); pick[key] = b.hasAttribute('data-other') ? '__other' : b.textContent.trim(); if (ob){ ob.hidden = !b.hasAttribute('data-other'); if (!ob.hidden && other) other.focus(); } }
-      g.classList.remove('bad'); if (/^(o1L|o2L|meetL|wedL)$/.test(key)) renderRoute();
+      g.classList.remove('bad'); if (/^(meetL|wedL)$/.test(key)) renderRoute();
     });
     if (other) other.addEventListener('input', renderRoute);
   });
   $('dayFlow').addEventListener('click', function(e){ var b = e.target.closest('.chip'); if (b) b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true'); });
   // 用車時間超過方案時數：提醒（方案時數向機器人查這張訂單）
   var PLAN = 0;
-  if (no) fetch(BOT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'wedForm', op: 'info', no: no }) }).then(function(r){ return r.json(); }).then(function(j){ if (j && j.ok && +j.hours > 0){ PLAN = +j.hours; hoursTip(); } }).catch(function(){});
+  var STOPS = ['新家', '祭祖地點', '證婚地點', '儀式地點', '入房地點'];
+  // 地點按鈕可在禮車系統「設定」裡增刪修改，這裡向機器人拿最新清單
+  function setChips(key, list){
+    var g = document.querySelector('[data-pick="' + key + '"]'); if (!g || !Array.isArray(list) || !list.length) return;
+    var ot = g.querySelector('[data-other]');
+    Array.prototype.slice.call(g.querySelectorAll('.chip:not([data-other])')).forEach(function(b){ b.remove(); });
+    list.forEach(function(t){ t = String(t || '').trim(); if (!t) return; var b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = t; if (pick[key] === t) b.setAttribute('aria-pressed', 'true'); g.insertBefore(b, ot); });
+    if (pick[key] && pick[key] !== '__other' && list.indexOf(pick[key]) < 0) pick[key] = '';
+  }
+  fetch(BOT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'wedForm', op: 'info', no: no }) }).then(function(r){ return r.json(); }).then(function(j){
+    if (!j || !j.ok) return;
+    if (+j.hours > 0){ PLAN = +j.hours; hoursTip(); }
+    var P = j.places;
+    if (P && typeof P === 'object'){ setChips('meetL', P.meet); setChips('wedL', P.wed); if (Array.isArray(P.stop) && P.stop.length){ STOPS = P.stop.slice(); refreshStops(); } renderRoute(); }
+  }).catch(function(){});
   function mins(t){ var m = String(t || '').match(/^(\d{1,2}):(\d{2})/); return m ? +m[1] * 60 + +m[2] : null; }
   function hoursTip(){
     var el = $('hoursTip'), a = mins($('start').value), b = mins($('end').value);
@@ -173,23 +188,56 @@ button.go:disabled{opacity:.6}
   $('start').addEventListener('change', hoursTip); $('end').addEventListener('change', hoursTip); $('start').addEventListener('input', hoursTip); $('end').addEventListener('input', hoursTip);
   function val(key){ var v = pick[key] || ''; return v === '__other' ? ($(key + 'Other').value || '').trim() : v; }
 
+
+  // 迎娶地址「同集合地址」
+  function wedSame(){ return $('wedSame').checked; }
+  $('wedSame').addEventListener('change', function(){ var on = wedSame(); $('wedBox').hidden = on; if (on) $('wed').removeAttribute('data-req'); else $('wed').setAttribute('data-req', ''); $('wed').classList.remove('bad'); renderRoute(); });
+  // 其他停靠地點：按「新增」才出現，最多 5 個
+  var MAXS = 5;
+  function stopChips(box, cur){
+    box.innerHTML = '';
+    STOPS.concat(['__other']).forEach(function(t){ var b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = t === '__other' ? '其他' : t; b.dataset.v = t; b.setAttribute('aria-pressed', cur === t ? 'true' : 'false'); box.appendChild(b); });
+  }
+  function stopBlocks(){ return Array.prototype.slice.call($('stops').querySelectorAll('.stop')); }
+  function renumber(){ stopBlocks().forEach(function(d, i){ d.querySelector('.q').firstChild.innerHTML = '<span class="pk">' + 'CDEFG'.charAt(i) + '</span>停靠地點'; }); $('addStop').disabled = stopBlocks().length >= MAXS; $('addStop').textContent = stopBlocks().length >= MAXS ? '已達 5 個停靠地點' : '＋ 新增停靠地點'; }
+  function refreshStops(){ stopBlocks().forEach(function(d){ var cur = d.dataset.l || ''; if (cur && cur !== '__other' && STOPS.indexOf(cur) < 0) cur = d.dataset.l = ''; stopChips(d.querySelector('.chips'), cur); }); }
+  function addStop(){
+    if (stopBlocks().length >= MAXS) return;
+    var d = document.createElement('div'); d.className = 'field stop'; d.dataset.l = '';
+    d.innerHTML = '<div class="qrow"><label class="q"><span>停靠地點</span><small>選填</small></label><button type="button" class="rm">移除</button></div><input class="sAddr" placeholder="完整地址"><div class="help">這是什麼地點？</div><div class="chips"></div><input class="sub sOther" placeholder="地點名稱，例如：拍照景點" hidden>';
+    stopChips(d.querySelector('.chips'), '');
+    d.querySelector('.rm').onclick = function(){ var i = stopBlocks().indexOf(d), k = 'CDEFG'.charAt(i); route = route.filter(function(x){ return x !== k; }).map(function(x){ var j = 'CDEFG'.indexOf(x); return j > i ? 'CDEFG'.charAt(j - 1) : x; }); d.remove(); renumber(); renderRoute(); };
+    d.querySelector('.chips').addEventListener('click', function(e){
+      var b = e.target.closest('.chip'); if (!b) return; var v = b.dataset.v, on = d.dataset.l === v;
+      d.dataset.l = on ? '' : v; Array.prototype.forEach.call(this.children, function(c){ c.setAttribute('aria-pressed', !on && c === b ? 'true' : 'false'); });
+      var ot = d.querySelector('.sOther'); ot.hidden = d.dataset.l !== '__other'; if (!ot.hidden) ot.focus(); renderRoute();
+    });
+    d.querySelector('.sOther').addEventListener('input', renderRoute);
+    $('stops').appendChild(d); renumber(); renderRoute(); d.querySelector('.sAddr').focus();
+  }
+  function stopVals(){ return stopBlocks().map(function(d){ var l = d.dataset.l === '__other' ? d.querySelector('.sOther').value.trim() : (d.dataset.l || ''); return { a: d.querySelector('.sAddr').value.trim(), l: l }; }).filter(function(x){ return x.a || x.l; }); }
+  $('addStop').onclick = addStop;
+
   // 路線：依序點地點，可倒退、清除、或選「行前一週確認」
-  function places(){
-    var L = ['男方家', '女方家', '餐廳', '飯店'];
-    [val('meetL'), val('wedL'), val('o1L'), val('o2L')].forEach(function(t){ if (t && L.indexOf(t) < 0) L.push(t); });
-    ['新家', '祭祖地點', '證婚地點', '儀式地點', '入房地點'].forEach(function(t){ if (L.indexOf(t) < 0) L.push(t); });
+  function places(){   // A 集合、B 迎娶（同集合時不顯示）、C 起依序為新增的停靠地點
+    var L = [{ k: 'A', n: val('meetL') || '集合地址' }];
+    if (!wedSame()) L.push({ k: 'B', n: val('wedL') || '迎娶地址' });
+    stopBlocks().forEach(function(d, i){ var l = d.dataset.l === '__other' ? d.querySelector('.sOther').value.trim() : (d.dataset.l || ''); L.push({ k: 'CDEFG'.charAt(i), n: l || '停靠地點' }); });
     return L;
   }
+  function pname(k){ var p = places().filter(function(x){ return x.k === k; })[0]; return p ? p.n : ''; }
   function renderRoute(){
     var box = $('routeChips'); box.innerHTML = '';
-    places().forEach(function(t){ var b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = t; b.disabled = later; b.onclick = function(){ route.push(t); show(); }; box.appendChild(b); });
+    var ks = places().map(function(p){ return p.k; }); route = route.filter(function(k){ return ks.indexOf(k) >= 0; });
+    places().forEach(function(p){ var b = document.createElement('button'); b.type = 'button'; b.className = 'chip rchip'; b.innerHTML = '<b>' + p.k + '</b><small>' + p.n.replace(/[&<>]/g, '') + '</small>'; b.disabled = later; b.onclick = function(){ route.push(p.k); show(); }; box.appendChild(b); });
     show();
   }
+  function routeText(){ return route.map(function(k){ return k + '（' + pname(k) + '）'; }).join(' > '); }
   function show(){
     var s = $('routeShow');
     if (later) s.innerHTML = '<span>行前一週確認</span>';
     else if (!route.length) s.innerHTML = '<span class="ph">還沒選擇路線</span>';
-    else s.innerHTML = route.map(function(t){ return '<span>' + t.replace(/[&<>]/g, '') + '</span>'; }).join('<span class="arrow">›</span>');
+    else s.innerHTML = route.map(function(k){ return '<span>' + k + '</span>'; }).join('<span class="arrow">›</span>');
     $('rBack').disabled = later || !route.length; $('rClear').disabled = later || !route.length;
     $('rLater').setAttribute('aria-pressed', later ? 'true' : 'false');
     Array.prototype.forEach.call($('routeChips').children, function(b){ b.disabled = later; });
@@ -212,9 +260,9 @@ button.go:disabled{opacity:.6}
     if (!pick.cane) return fail('請選擇車頂甘蔗固定需求', document.querySelector('[data-pick="cane"]'));
     if (!pick.deco) return fail('請選擇車頭彩安排', document.querySelector('[data-pick="deco"]'));
     var body = { action: 'wedForm', hp: $('hp').value, no: $('no').value.trim(), groom: $('groom').value.trim(), bride: $('bride').value.trim(), role: role, rel: rel, phone: $('phone').value.trim(),
-      start: $('start').value, end: $('end').value, meet: $('meet').value.trim(), wed: $('wed').value.trim(),
-      o1: $('o1').value.trim(), o1L: val('o1L'), o2: $('o2').value.trim(), o2L: val('o2L'),
-      route: later ? '行前一週確認' : route.join(' > '), meetL: val('meetL'), wedL: val('wedL'), dayFlow: Array.prototype.filter.call($('dayFlow').children, function(c){ return c.getAttribute('aria-pressed') === 'true'; }).map(function(c){ return c.textContent; }).join('、'), note: $('note').value.trim(), cane: pick.cane, deco: pick.deco };
+      start: $('start').value, end: $('end').value, meet: $('meet').value.trim(), wed: wedSame() ? $('meet').value.trim() : $('wed').value.trim(),
+      route: later ? '行前一週確認' : routeText(), meetL: val('meetL'), wedL: wedSame() ? val('meetL') : val('wedL'), dayFlow: Array.prototype.filter.call($('dayFlow').children, function(c){ return c.getAttribute('aria-pressed') === 'true'; }).map(function(c){ return c.textContent; }).join('、'), note: $('note').value.trim(), cane: pick.cane, deco: pick.deco };
+    var SV = stopVals(); for (var si = 0; si < SV.length; si++){ if (!SV[si].a) return fail('請填寫停靠地點 ' + 'CDEFG'.charAt(si) + ' 的地址', stopBlocks()[si].querySelector('.sAddr')); body['o' + (si + 1)] = SV[si].a; body['o' + (si + 1) + 'L'] = SV[si].l; }
     if (PREVIEW){ $('f').hidden = true; $('done').hidden = false; $('done').querySelector('p').textContent = '（預覽模式：資料沒有送出）\n\n' + Object.keys(body).filter(function(k){ return k !== 'action' && k !== 'hp' && body[k]; }).map(function(k){ return k + '：' + body[k]; }).join('\n'); window.scrollTo(0, 0); return; }
     var go = $('go'); go.disabled = true; go.textContent = '送出中…';
     fetch(BOT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) })
