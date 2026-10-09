@@ -53,8 +53,13 @@ ul.pts li:before{content:"";position:absolute;left:6px;top:19px;width:8px;height
 .sub-h{display:flex;align-items:center;gap:10px;margin:26px 0 0;font-family:"Noto Serif TC",serif;font-size:19px;color:var(--brown)}
 .sub-h:after{content:"";flex:1;height:1px;background:var(--line)}
 .custom{display:grid;gap:14px;margin-top:22px}
-@media(min-width:700px){.custom{grid-template-columns:1fr 1fr}}
+@media(min-width:700px){.custom{grid-template-columns:1fr 1.3fr;align-items:center}}
 .custom .box b{color:var(--brown)}
+.signfig{margin:0}
+.note-s{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:14.5px;color:var(--ink)}
+.note-s a{color:var(--rose)}
+.signfig img{width:100%;max-width:720px;border-radius:14px;cursor:zoom-in;margin:0 auto}
+.signfig figcaption{text-align:center;color:var(--sub);font-size:13.5px;margin-top:6px}
 .custom .tag{display:inline-block;font-size:13px;font-weight:700;color:var(--red);background:#fbe7e3;border-radius:6px;padding:1px 8px;margin-left:6px}
 footer{text-align:center;padding:48px 20px 64px;color:var(--sub);font-size:14px}
 footer .script{font-size:40px}
@@ -132,20 +137,22 @@ footer a{color:var(--rose)}
 <section id="p1200">
   <div class="sec-h"><span class="no">03</span><h2>款式目錄</h2><span class="price">$1,200</span></div>
   <p class="lead">A–J 款，點圖片可放大。</p>
+  <div class="note-s">預設字樣：指定款預設為 Wedding 木頭字樣（B 款為囍字）；想換成新人英文名字，可加購<a href="#custom">客製化英文名字木牌</a>。</div>
   <div class="grid" data-codes="ABCDEFGHIJ"></div>
 </section>
 
 <section id="p1600">
   <div class="sec-h"><span class="no">04</span><h2>款式目錄</h2><span class="price light">$1,600</span></div>
   <p class="lead">K–P 款（寬 90–100cm），點圖片可放大。</p>
+  <div class="note-s">預設字樣：指定款預設為 Wedding 木頭字樣；想換成新人英文名字，可加購<a href="#custom">客製化英文名字木牌</a>。</div>
   <div class="grid" data-codes="KLMNOP"></div>
 </section>
 
 <section id="custom">
   <div class="sec-h"><span class="no">05</span><h2>客製名牌</h2></div>
   <div class="custom">
-    <div class="box"><b>預設字樣</b><br>指定款預設為 Wedding 木頭字樣（B 款為囍字）。</div>
-    <div class="box"><b>客製化英文名字</b><span class="tag">+$800</span><br>壓克力或木頭英文名字，須於婚期前一個月提出客製化需求；用畢後姓名牌可提供新人收藏。</div>
+    <div class="box"><b>客製化英文名字木牌</b><span class="tag">+$1,000</span><br>可將新人的英文名字做成木牌放在車頭彩上（例：Billy &amp; Emma），須於婚期前一個月提出客製化需求。<br><b>用車結束後，名牌會提供新人做紀念。</b></div>
+    <figure class="signfig"><img src="deco/sign-sample.jpg" alt="客製化英文名字木牌示意：Billy &amp; Emma" loading="lazy"><figcaption>客製化英文名字木牌示意</figcaption></figure>
   </div>
 </section>
 
@@ -172,7 +179,7 @@ footer a{color:var(--rose)}
   var lb=document.getElementById('lb'),li=lb.querySelector('img');
   document.addEventListener('click',function(e){
     var t=e.target;
-    if(t.tagName==='IMG'&&(t.closest('.card')||t.closest('.photos'))){li.src=t.src;li.alt=t.alt;lb.classList.add('on');}
+    if(t.tagName==='IMG'&&(t.closest('.card')||t.closest('.photos')||t.closest('.signfig'))){li.src=t.src;li.alt=t.alt;lb.classList.add('on');}
     else if(lb.classList.contains('on')&&(t===lb||t.tagName==='BUTTON')){lb.classList.remove('on');}
   });
   document.addEventListener('keydown',function(e){if(e.key==='Escape')lb.classList.remove('on')});

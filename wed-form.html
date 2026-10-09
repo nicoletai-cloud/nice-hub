@@ -37,6 +37,21 @@ input[readonly]{background:transparent;color:var(--muted)}
 .chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .chip:disabled{opacity:.45;cursor:default}
 .sub{margin-top:8px}
+.decobox{margin-top:10px;display:grid;gap:10px}
+.dgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(min-width:560px){.dgrid{grid-template-columns:repeat(3,1fr)}}
+.dcard{font:inherit;text-align:left;padding:0;border:2px solid var(--line);border-radius:14px;background:var(--surface);overflow:hidden;cursor:pointer;color:var(--fg);display:flex;flex-direction:column}
+.dcard img{width:100%;aspect-ratio:516/459;object-fit:cover;display:block;background:#eee}
+.dcard .dn{padding:8px 10px 2px;font-size:14px;font-weight:600;line-height:1.35}
+.dcard .dp{padding:0 10px 9px;font-size:14px;color:var(--muted)}
+.dcard[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.dcard[aria-pressed="true"] .dp{color:var(--accent);font-weight:700}
+.signchk{display:flex;align-items:center;gap:8px;font-size:15.5px;cursor:pointer;margin-top:4px}
+.signchk input{width:20px;height:20px;min-height:0;margin:0;padding:0;border:0;box-shadow:none;accent-color:var(--accent)}
+#signBox{display:grid;gap:8px}
+.signimg{width:100%;max-width:420px;border-radius:12px}
+.decosum{font-size:15.5px;font-weight:600}
+.decosum:empty{display:none}
 .pk{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:14px;font-weight:700;margin-right:8px;vertical-align:1px}
 .rchip{display:inline-flex;align-items:center;gap:6px}.rchip b{font-size:17px}.rchip small{font-size:13px;opacity:.75}
 .qrow{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
@@ -115,10 +130,19 @@ button.go:disabled{opacity:.6}
 盒裝置於後車廂則不收取固定費。</div>
       <div class="chips" data-pick="cane"><button type="button" class="chip">需要</button><button type="button" class="chip">不需要</button><button type="button" class="chip">待確認</button></div>
     </div>
-    <div class="field"><label class="q">車頭彩安排<b>*</b></label><div class="help">一般車頭彩由司機準備，無法指定款式。
-指定現有款式 NT$1,200–1,600；指定或客製化需求，請於用車前兩週私訊客服討論並完成確認。
-<a href="https://nicoletai-cloud.github.io/nice-hub/deco.html" target="_blank" rel="noopener">查看車頭彩款式與說明</a></div>
-      <div class="chips" data-pick="deco"><button type="button" class="chip">希望付費指定或客製化</button><button type="button" class="chip">由司機準備一般車頭彩</button><button type="button" class="chip">待確認</button></div>
+    <div class="field"><label class="q">車頭彩安排<b>*</b></label><div class="help">不指定的話，車頭彩由司機預備，無法指定款式。指定車頭彩費用 NT$1,200／1,600，會加在合約金額與尾款。<a href="https://nicoletai-cloud.github.io/nice-hub/deco.html" target="_blank" rel="noopener">查看車頭彩說明</a></div>
+      <div class="chips" data-pick="deco"><button type="button" class="chip">指定車頭彩</button><button type="button" class="chip">不指定車頭彩（由司機預備）</button><button type="button" class="chip">待確認</button></div>
+      <div id="decoBox" class="decobox" hidden>
+        <div class="help" id="decoHelp">請選一款（以下為您用車日期可預訂的款式）：</div>
+        <div class="dgrid" id="decoGrid"></div>
+        <label class="signchk"><input type="checkbox" id="signOn"> 加購客製化英文名字木牌 <b>+NT$1,000</b></label>
+        <div id="signBox" hidden>
+          <img src="deco/sign-sample.jpg" alt="客製化英文名字木牌示意" class="signimg" loading="lazy">
+          <div class="note-tip">用車結束後，名牌會提供新人做紀念。</div><div class="help">示意圖：木牌會放在車頭彩上。</div>
+          <input id="signName" maxlength="40" placeholder="英文名字，例如：Billy &amp; Emma" autocomplete="off">
+        </div>
+        <div class="decosum" id="decoSum"></div>
+      </div>
     </div>
 
     <div class="err" id="err"></div>
@@ -172,6 +196,7 @@ button.go:disabled{opacity:.6}
   fetch(BOT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'wedForm', op: 'info', no: no }) }).then(function(r){ return r.json(); }).then(function(j){
     if (!j || !j.ok) return;
     if (+j.hours > 0){ PLAN = +j.hours; hoursTip(); }
+    if (Array.isArray(j.deco) && j.deco.length){ DECO = j.deco.filter(function(z){ return z && z.code; }); renderDeco(); }
     var P = j.places;
     if (P && typeof P === 'object'){ setChips('meetL', P.meet); setChips('wedL', P.wed); if (Array.isArray(P.stop) && P.stop.length){ STOPS = P.stop.slice(); refreshStops(); } renderRoute(); }
   }).catch(function(){});
@@ -188,6 +213,40 @@ button.go:disabled{opacity:.6}
   $('start').addEventListener('change', hoursTip); $('end').addEventListener('change', hoursTip); $('start').addEventListener('input', hoursTip); $('end').addEventListener('input', hoursTip);
   function val(key){ var v = pick[key] || ''; return v === '__other' ? ($(key + 'Other').value || '').trim() : v; }
 
+
+
+  // 指定車頭彩：顯示用車日可預訂的款式（有圖、有價），單選；可加購客製英文名字木牌
+  var DECO_N = {A:'40cm 紅玫瑰心環',B:'40cm 囍字紅金花環',C:'錦瑟華年熱情款',D:'艾莉絲藍粉色花彩',E:'森系紅色仿真車彩',F:'卡布奇諾浪漫款',G:'紫戀花語詩韻款',H:'繁花似錦溫馨款',I:'花影流光夢幻款',J:'雲裳花語優雅款',K:'小清新浪漫女孩車花',L:'花開如夢繽紛款',M:'花辰月夕喜慶款',N:'丹華映日禮讚款',O:'幽蘭淡雅綺麗款',P:'玉蘭丹華錦繡款'};
+  var DECO = Object.keys(DECO_N).map(function(k){ return { code: k, name: DECO_N[k], price: 0, busy: false }; }), decoSel = '', SIGN_FEE = 1000;
+  function dPrice(z){ return +z.price || (/^[A-J]$/.test(z.code) ? 1200 : /^[K-P]$/.test(z.code) ? 1600 : 0); }
+  function money(n){ return 'NT$' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  function renderDeco(){
+    var g = $('decoGrid'); g.innerHTML = '';
+    var L = DECO.filter(function(z){ return !z.busy; });
+    if (decoSel && !L.some(function(z){ return z.code === decoSel; })) decoSel = '';
+    $('decoHelp').textContent = L.length ? '請選一款（以下為您用車日期可預訂的款式）：' : '您的用車日期目前沒有可預訂的指定款式，請私訊客服詢問。';
+    L.forEach(function(z){
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'dcard'; b.setAttribute('aria-pressed', z.code === decoSel ? 'true' : 'false');
+      var nm = (z.code.length === 1 ? z.code + '. ' : '') + (z.name || (z.code.length > 1 ? '' : DECO_N[z.code] || '')), p = dPrice(z);
+      b.innerHTML = '<img loading="lazy" alt=""><div class="dn"></div><div class="dp"></div>';
+      var im = b.querySelector('img'); im.src = 'deco/deco-' + encodeURIComponent(z.code) + '.jpg'; im.onerror = function(){ im.remove(); };
+      b.querySelector('.dn').textContent = nm || z.code; b.querySelector('.dp').textContent = p ? money(p) : '價格請洽客服';
+      b.onclick = function(){ decoSel = decoSel === z.code ? '' : z.code; renderDeco(); $('decoGrid').classList.remove('bad'); };
+      g.appendChild(b);
+    });
+    decoSum();
+  }
+  function decoPick(){ return DECO.filter(function(z){ return z.code === decoSel; })[0] || null; }
+  function decoFee(){ var z = decoPick(); return (z ? dPrice(z) : 0) + ($('signOn').checked ? SIGN_FEE : 0); }
+  function decoSum(){
+    var z = decoPick(), t = [];
+    if (z) t.push((z.code.length === 1 ? z.code + ' 款 ' : '') + money(dPrice(z)));
+    if ($('signOn').checked) t.push('英文名字木牌 ' + money(SIGN_FEE));
+    $('decoSum').textContent = t.length ? '車頭彩費用：' + t.join(' ＋ ') + (t.length > 1 ? ' ＝ ' + money(decoFee()) : '') + '（會加在合約金額與尾款）' : '';
+  }
+  $('signOn').addEventListener('change', function(){ $('signBox').hidden = !this.checked; if (this.checked) $('signName').focus(); decoSum(); });
+  document.querySelector('[data-pick="deco"]').addEventListener('click', function(){ setTimeout(function(){ $('decoBox').hidden = pick.deco !== '指定車頭彩'; }, 0); });
+  renderDeco();
 
   // 迎娶地址「同集合地址」
   function wedSame(){ return $('wedSame').checked; }
@@ -259,9 +318,13 @@ button.go:disabled{opacity:.6}
     var rel = pick.role === '__other' ? $('roleRel').value.trim() : ''; if (pick.role === '__other' && !rel) return fail('請填寫聯絡人身份，例如新郎媽媽、婚顧', $('roleRel'));
     if (!pick.cane) return fail('請選擇車頂甘蔗固定需求', document.querySelector('[data-pick="cane"]'));
     if (!pick.deco) return fail('請選擇車頭彩安排', document.querySelector('[data-pick="deco"]'));
+    var dz = pick.deco === '指定車頭彩' ? decoPick() : null;
+    if (pick.deco === '指定車頭彩' && !dz) return fail('請選擇指定車頭彩的款式', $('decoGrid'));
+    var sign = pick.deco === '指定車頭彩' && $('signOn').checked ? $('signName').value.trim() : '';
+    if (pick.deco === '指定車頭彩' && $('signOn').checked && !sign) return fail('請填寫木牌上的英文名字', $('signName'));
     var body = { action: 'wedForm', hp: $('hp').value, no: $('no').value.trim(), groom: $('groom').value.trim(), bride: $('bride').value.trim(), role: role, rel: rel, phone: $('phone').value.trim(),
       start: $('start').value, end: $('end').value, meet: $('meet').value.trim(), wed: wedSame() ? $('meet').value.trim() : $('wed').value.trim(),
-      route: later ? '行前一週確認' : routeText(), meetL: val('meetL'), wedL: wedSame() ? val('meetL') : val('wedL'), dayFlow: Array.prototype.filter.call($('dayFlow').children, function(c){ return c.getAttribute('aria-pressed') === 'true'; }).map(function(c){ return c.textContent; }).join('、'), note: $('note').value.trim(), cane: pick.cane, deco: pick.deco };
+      route: later ? '行前一週確認' : routeText(), meetL: val('meetL'), wedL: wedSame() ? val('meetL') : val('wedL'), dayFlow: Array.prototype.filter.call($('dayFlow').children, function(c){ return c.getAttribute('aria-pressed') === 'true'; }).map(function(c){ return c.textContent; }).join('、'), note: $('note').value.trim(), cane: pick.cane, deco: pick.deco, decoStyle: dz ? (dz.code + (dz.name || DECO_N[dz.code] ? '. ' + (dz.name || DECO_N[dz.code]) : '')) : '', decoSign: sign, decoFee: dz ? String(decoFee()) : '' };
     var SV = stopVals(); for (var si = 0; si < SV.length; si++){ if (!SV[si].a) return fail('請填寫停靠地點 ' + 'CDEFG'.charAt(si) + ' 的地址', stopBlocks()[si].querySelector('.sAddr')); body['o' + (si + 1)] = SV[si].a; body['o' + (si + 1) + 'L'] = SV[si].l; }
     if (PREVIEW){ $('f').hidden = true; $('done').hidden = false; $('done').querySelector('p').textContent = '（預覽模式：資料沒有送出）\n\n' + Object.keys(body).filter(function(k){ return k !== 'action' && k !== 'hp' && body[k]; }).map(function(k){ return k + '：' + body[k]; }).join('\n'); window.scrollTo(0, 0); return; }
     var go = $('go'); go.disabled = true; go.textContent = '送出中…';
