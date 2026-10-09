@@ -137,6 +137,8 @@ nav.pages{display:flex;gap:8px;margin:0 0 16px;flex-wrap:wrap}
 nav.pages a{font:500 19px var(--f-body);color:var(--muted);text-decoration:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 20px;min-height:42px;display:inline-flex;align-items:center}
 nav.pages a[aria-current="page"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
 nav.pages a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+nav.pages a.ext{color:var(--fg);border-style:dashed}
+nav.pages a.ext:hover{border-color:var(--accent);color:var(--accent)}
 [hidden]{display:none!important}
 /* ---- 司機總覽 ---- */
 .drvs h2{margin:0 0 10px;font-size:30px;font-weight:700;letter-spacing:.04em}
@@ -168,6 +170,8 @@ nav.pages a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   <nav class="pages" aria-label="頁面">
     <a href="#" id="pgLinkHome" data-p="home" aria-current="page">總覽</a>
     <a href="#drivers" id="pgLinkDrivers" data-p="drivers">司機</a>
+    <a class="ext" href="https://nicoletai-cloud.github.io/nice-wedding-car/">機場接送派車 →</a>
+    <a class="ext" href="https://nicoletai-cloud.github.io/nice-wedding-procession/">結婚禮車派車 →</a>
   </nav>
   <div class="bar">
     <span class="st" id="status">正在讀取今日待辦…</span>
