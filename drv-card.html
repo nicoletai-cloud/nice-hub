@@ -25,6 +25,10 @@ input.bad{border-color:var(--warn);background:var(--warn-soft)}
 .chip{font:inherit;font-size:15px;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 14px;min-height:38px;cursor:pointer}
 .chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .err{color:var(--warn);font-size:14px;min-height:0}
+.hint{font-size:15px;color:var(--ok);min-height:0}
+.hint.warn{color:var(--warn)}
+.sec{font-weight:700;font-size:18px;border-top:1px solid var(--line);padding-top:16px;margin-top:4px}
+.sec small{display:block;font-weight:400;font-size:14px;color:var(--muted)}
 button.go{font:inherit;font-weight:700;font-size:18px;color:var(--accent-ink);background:var(--accent);border:0;border-radius:12px;min-height:52px;width:100%;cursor:pointer;margin-top:4px}
 button.go:disabled{opacity:.6}
 .note{border-radius:12px;padding:14px 16px;white-space:pre-line}
@@ -65,19 +69,21 @@ button.go:disabled{opacity:.6}
       <div class="err" id="e-plate"></div>
     </div>
     <div class="field">
-      <label for="car">車款</label>
-      <div class="chips" data-for="car">
-        <button type="button" class="chip">Model Y</button><button type="button" class="chip">Model 3</button><button type="button" class="chip">Model S</button><button type="button" class="chip">Model X</button><button type="button" class="chip">Benz Vito</button><button type="button" class="chip">Toyota Alphard</button><button type="button" class="chip">Lexus LM</button>
+      <label>廠牌</label>
+      <div class="chips" id="brandChips">
+        <button type="button" class="chip">Tesla</button><button type="button" class="chip">Benz</button><button type="button" class="chip">BMW</button><button type="button" class="chip">Lexus</button><button type="button" class="chip">Toyota</button><button type="button" class="chip">其他</button>
       </div>
-      <input id="car" maxlength="30" placeholder="點上面選，或自己輸入（例：Model Y 煥新款）" required>
+      <input id="brandOther" maxlength="15" placeholder="其他進口車廠牌（例：Volvo）" hidden>
+      <div class="err" id="e-brand"></div>
+    </div>
+    <div class="field">
+      <label for="car">車款</label>
+      <input id="car" maxlength="25" placeholder="例：Model Y" required>
       <div class="err" id="e-car"></div>
     </div>
     <div class="field">
       <label for="color">車色</label>
-      <div class="chips" data-for="color">
-        <button type="button" class="chip">白色</button><button type="button" class="chip">黑色</button><button type="button" class="chip">灰色</button><button type="button" class="chip">銀色</button><button type="button" class="chip">藍色</button><button type="button" class="chip">紅色</button>
-      </div>
-      <input id="color" maxlength="10" placeholder="點上面選，或自己輸入" required>
+      <input id="color" maxlength="10" placeholder="例：白色" required>
       <div class="err" id="e-color"></div>
     </div>
     <div class="field">
@@ -87,6 +93,38 @@ button.go:disabled{opacity:.6}
       </div>
       <input id="seats" type="number" inputmode="numeric" min="2" max="19" placeholder="例：5" required>
       <div class="err" id="e-seats"></div>
+    </div>
+    <div class="sec">匯款帳號<small>車資匯款用，只有好好禮車看得到</small></div>
+    <div class="field">
+      <label for="bankCode">銀行代碼<small>3 碼，例：822</small></label>
+      <input id="bankCode" inputmode="numeric" autocomplete="off" maxlength="3" placeholder="例：822" required>
+      <div class="hint" id="bankName"></div>
+      <input type="hidden" id="bank">
+      <div class="err" id="e-bankCode"></div>
+    </div>
+    <div class="field">
+      <label for="acct">帳號</label>
+      <input id="acct" inputmode="numeric" autocomplete="off" maxlength="20" placeholder="只填數字" required>
+      <div class="err" id="e-acct"></div>
+    </div>
+    <div class="field">
+      <label for="holder">戶名<small>和姓名一樣可以不填</small></label>
+      <input id="holder" maxlength="20">
+      <div class="err" id="e-holder"></div>
+    </div>
+    <div class="sec">緊急聯絡人<small>禮車司機必填</small></div>
+    <div class="field">
+      <label for="emPhone">緊急聯絡電話</label>
+      <input id="emPhone" type="tel" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="例：0912345678">
+      <div class="err" id="e-emPhone"></div>
+    </div>
+    <div class="field">
+      <label for="emRel">對方關係</label>
+      <div class="chips" data-for="emRel">
+        <button type="button" class="chip">配偶</button><button type="button" class="chip">父母</button><button type="button" class="chip">兄弟姊妹</button><button type="button" class="chip">朋友</button>
+      </div>
+      <input id="emRel" maxlength="10" placeholder="點上面選，或自己輸入">
+      <div class="err" id="e-emRel"></div>
     </div>
     <div class="note warn" id="srvErr" hidden></div>
     <button type="submit" class="go" id="go">送出車卡</button>
@@ -104,6 +142,8 @@ button.go:disabled{opacity:.6}
   var BOT = 'https://script.google.com/macros/s/AKfycbwoKk13j5YOtkA5cTh3FtvECekYm0uMBPsid1H--kB7bhUVpDFvSnSA0iTzCfc8IT11_Q/exec';
   var $ = function(id){ return document.getElementById(id); };
   var idToken = '', disp = '', bound = false, goLabel = '送出車卡';
+  var FIELDS = ['name','phone','plate','car','color','seats','bankCode','acct','holder','emPhone','emRel'];
+  var BANKS = {'004':'臺灣銀行','005':'土地銀行','006':'合作金庫','007':'第一銀行','008':'華南銀行','009':'彰化銀行','011':'上海商銀','012':'台北富邦','013':'國泰世華','016':'高雄銀行','017':'兆豐銀行','021':'花旗（台灣）','048':'王道銀行','050':'臺灣企銀','052':'渣打銀行','053':'台中銀行','054':'京城銀行','081':'滙豐（台灣）','101':'瑞興銀行','102':'華泰銀行','103':'新光銀行','108':'陽信銀行','118':'板信銀行','147':'三信銀行','700':'中華郵政','803':'聯邦銀行','805':'遠東銀行','806':'元大銀行','807':'永豐銀行','808':'玉山銀行','809':'凱基銀行','810':'星展（台灣）','812':'台新銀行','816':'安泰銀行','822':'中國信託','823':'將來銀行','824':'連線銀行（LINE Bank）','826':'樂天銀行'};
 
   function fatal(msg){ $('loading').hidden = true; $('f').hidden = true; $('fatal').hidden = false; $('fatal').textContent = msg; }
   function post(body){
@@ -112,7 +152,34 @@ button.go:disabled{opacity:.6}
   }
 
   // 快速選項：點了帶入欄位，再點一次取消
-  document.querySelectorAll('.chips').forEach(function(box){
+  // 廠牌：Tesla / Benz / BMW / Lexus / 其他（自己填）
+  var BRANDS = ['Tesla', 'Benz', 'BMW', 'Lexus', 'Toyota'], brand = '';
+  function setBrand(b){
+    brand = b;
+    $('brandChips').querySelectorAll('.chip').forEach(function(c){ c.setAttribute('aria-pressed', String(c.textContent === b)); });
+    $('brandOther').hidden = b !== '其他';
+    $('e-brand').textContent = ''; $('brandOther').classList.remove('bad');
+  }
+  $('brandChips').addEventListener('click', function(e){
+    var c = e.target.closest('.chip'); if (!c) return;
+    setBrand(c.textContent);
+    if (brand === '其他') $('brandOther').focus();
+  });
+  $('brandOther').addEventListener('input', function(){ $('e-brand').textContent = ''; $('brandOther').classList.remove('bad'); });
+  function brandText(){ return brand === '其他' ? val('brandOther') : brand; }
+  // 舊資料的車款拆回廠牌＋車款
+  function splitCar(car){
+    car = String(car || '').trim();
+    var alias = [['Tesla', /^(tesla|特斯拉)\s*/i], ['Benz', /^(mercedes[-\s]?benz|benz|賓士)\s*/i], ['BMW', /^(bmw|寶馬)\s*/i], ['Lexus', /^(lexus|凌志)\s*/i], ['Toyota', /^(toyota|豐田)\s*/i]];
+    for (var i = 0; i < alias.length; i++){ if (alias[i][1].test(car)) return { brand: alias[i][0], model: car.replace(alias[i][1], '') }; }
+    if (/^model\s?[3sxy]\b/i.test(car)) return { brand: 'Tesla', model: car };
+    if (/^(vito|v\s?class)/i.test(car)) return { brand: 'Benz', model: car };
+    if (/^lm\b/i.test(car)) return { brand: 'Lexus', model: car };
+    if (/^(alphard|granvia|sienta|previa)\b/i.test(car)) return { brand: 'Toyota', model: car };
+    var m = car.match(/^([A-Za-z\u4e00-\u9fa5-]+)\s+(.+)$/);
+    return m ? { brand: '其他', other: m[1], model: m[2] } : { brand: '', model: car };
+  }
+  document.querySelectorAll('.chips[data-for]').forEach(function(box){
     var input = $(box.getAttribute('data-for'));
     function sync(){ box.querySelectorAll('.chip').forEach(function(c){ c.setAttribute('aria-pressed', String(c.textContent === input.value.trim())); }); }
     box.addEventListener('click', function(e){
@@ -132,19 +199,37 @@ button.go:disabled{opacity:.6}
     if (!val('name')) errs.name = '請填姓名';
     if (!/^09\d{8}$/.test(phone)) errs.phone = '請填 10 碼手機號碼（09 開頭）';
     if (val('plate').replace(/[^A-Za-z0-9]/g, '').length < 4) errs.plate = '請填完整車牌';
-    if (!val('car')) errs.car = '請選或填車款';
+    if (!brand) errs.brand = '請選廠牌';
+    else if (brand === '其他' && !val('brandOther')) { errs.brand = '請填其他進口車廠牌'; $('brandOther').classList.add('bad'); }
+    if (!val('car')) errs.car = '請填車款';
     if (!val('color')) errs.color = '請選或填車色';
     if (!/^([2-9]|1[0-9])$/.test(val('seats'))) errs.seats = '請填 2～19 的數字';
-    ['name','phone','plate','car','color','seats'].forEach(function(k){
+    if (!/^\d{3}$/.test(val('bankCode'))) errs.bankCode = '請填 3 碼銀行代碼（例：822）';
+    if (!/^\d{10,16}$/.test(val('acct').replace(/[\s-]/g, ''))) errs.acct = '帳號請填 10～16 位數字';
+    var em = val('emPhone').replace(/[^0-9]/g, '');
+    if (em && !/^0\d{7,11}$/.test(em)) errs.emPhone = '請填正確的電話號碼';
+    else if (!em && val('emRel')) errs.emPhone = '有填關係的話，電話也要填';
+    if (em && !val('emRel')) errs.emRel = '請填對方關係（例：配偶）';
+    FIELDS.forEach(function(k){
       $(k).classList.toggle('bad', !!errs[k]); $('e-' + k).textContent = errs[k] || '';
     });
+    if (errs.brand) $('e-brand').textContent = errs.brand;
     var first = Object.keys(errs)[0];
+    if (first === 'brand'){ (brand === '其他' ? $('brandOther') : $('brandChips')).scrollIntoView({ block: 'center' }); return false; }
     if (first) $(first).focus();
     return !first;
   }
-  ['name','phone','plate','car','color','seats'].forEach(function(k){
+  FIELDS.forEach(function(k){
     $(k).addEventListener('input', function(){ $(k).classList.remove('bad'); $('e-' + k).textContent = ''; });
   });
+  function showBank(){
+    var c = val('bankCode').replace(/[^0-9]/g, ''), n = BANKS[c] || '', h = $('bankName');
+    if (c !== $('bankCode').value) $('bankCode').value = c;
+    $('bank').value = c.length === 3 ? (n ? c + ' ' + n : c) : '';
+    h.className = 'hint' + (c.length === 3 && !n ? ' warn' : '');
+    h.textContent = c.length < 3 ? '' : (n ? '✓ ' + n : '清單裡找不到這個代碼，請再確認一次（農會、信用合作社可照填）');
+  }
+  $('bankCode').addEventListener('input', showBank);
   $('plate').addEventListener('blur', function(){ $('plate').value = $('plate').value.toUpperCase(); });
 
   $('f').addEventListener('submit', function(e){
@@ -153,7 +238,9 @@ button.go:disabled{opacity:.6}
     if (!check()) return;
     $('go').disabled = true; $('go').textContent = '送出中…';
     post({ action: 'drvLiff', op: 'save', idToken: idToken, disp: disp,
-      card: { name: val('name'), phone: val('phone'), plate: val('plate').toUpperCase(), car: val('car'), color: val('color'), seats: val('seats') } })
+      card: { name: val('name'), phone: val('phone'), plate: val('plate').toUpperCase(), car: (brandText() + ' ' + val('car')).trim(), color: val('color'), seats: val('seats'),
+        bank: $('bank').value, acct: val('acct').replace(/[\s-]/g, ''), holder: val('holder'),
+        emPhone: val('emPhone').replace(/[^0-9]/g, ''), emRel: val('emRel') } })
       .then(function(j){
         if (!j || !j.ok) throw new Error((j && j.error) || '送出失敗，請再試一次');
         if (!j.done){ $('srvErr').hidden = false; $('srvErr').textContent = (j.msg || '資料有誤，請檢查後再送出').split('\n')[0]; return; }
@@ -183,7 +270,11 @@ button.go:disabled{opacity:.6}
     if (bound && j.card){
       $('title').textContent = '更新車卡';
       $('lead').textContent = '確認或修改下面的資料，改好按送出。';
-      ['name','phone','plate','car','color','seats'].forEach(function(k){ $(k).value = j.card[k] || ''; if ($(k)._sync) $(k)._sync(); });
+      j.card.bankCode = String(j.card.bank || '').slice(0, 3);
+      var sc = splitCar(j.card.car); j.card.car = sc.model;
+      if (sc.brand) setBrand(sc.brand); if (sc.other) $('brandOther').value = sc.other;
+      FIELDS.forEach(function(k){ $(k).value = j.card[k] || ''; if ($(k)._sync) $(k)._sync(); });
+      showBank();
       $('name').readOnly = true;
       goLabel = '送出更新'; $('go').textContent = goLabel;
     } else if (disp && !val('name')) {
