@@ -545,7 +545,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     }
     loadCar(first);
     $('loading').hidden = true; $('f').hidden = false;
-    if (qTo === 'photos' && bound) setTimeout(function(){ var t = !photos.length ? 'photos' : !ins.length ? 'insBox' : decoNeed() && !(deco || []).length ? 'decoField' : 'photos'; (t === 'decoField' ? $(t) : $(t).previousElementSibling).scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 150);
+    if (/^(photos|ins|deco)$/.test(qTo) && bound) setTimeout(function(){ var t = qTo === 'ins' ? 'insBox' : qTo === 'deco' && decoNeed() ? 'decoField' : !photos.length ? 'photos' : !ins.length ? 'insBox' : decoNeed() && !(deco || []).length ? 'decoField' : 'photos'; (t === 'decoField' ? $(t) : $(t).previousElementSibling).scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 150);
   }).catch(function(err){ fatal(err && err.message ? err.message : '讀取失敗，請關掉後重新開啟'); });
 })();
 </script>
