@@ -46,6 +46,9 @@ button.go:disabled{opacity:.6}
 .pick{font:inherit;font-size:15px;border:1px solid var(--accent);color:var(--accent);background:transparent;border-radius:999px;padding:6px 14px;min-height:38px;cursor:pointer;white-space:nowrap}
 .pick:disabled{opacity:.5}
 .del{font:inherit;font-size:14px;border:0;background:transparent;color:var(--warn);cursor:pointer;padding:6px}
+.dist{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:8px;background:var(--surface)}
+.dist b{display:block;margin-bottom:6px;font-size:15px}
+.dist .chip{font-size:14px;padding:4px 11px;min-height:34px}
 .ck{display:flex;gap:8px;align-items:center;font-weight:400;margin:6px 0}
 .ck input{width:22px;height:22px;min-height:0}
 .dates{display:grid;gap:10px}
@@ -79,8 +82,9 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       <div class="err" id="e-phone"></div>
     </div>
     <div class="field">
-      <label for="area">居住地區<small>縣市＋區，例：台中市北屯區</small></label>
-      <input id="area" maxlength="20" placeholder="例：台中市北屯區" required>
+      <label>居住地區<small>縣市可複選，選了縣市再選地區</small></label>
+      <div class="chips" id="cityChips"></div>
+      <div id="distBox"></div>
       <div class="err" id="e-area"></div>
     </div>
     <div class="field">
@@ -123,13 +127,13 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     <div class="field">
       <label>包膜</label>
       <div class="chips yn" data-yn="wrap"><button type="button" class="chip">有</button><button type="button" class="chip">無</button></div>
-      <input id="wrapNote" maxlength="60" placeholder="說明，例：全車消光黑包膜" hidden>
+      <input id="wrapNote" maxlength="60" placeholder="說明包膜顏色、材質，例：消光黑、TPU 犀牛皮" hidden>
       <div class="err" id="e-wrap"></div>
     </div>
     <div class="field">
       <label>改裝</label>
       <div class="chips yn" data-yn="mod"><button type="button" class="chip">有</button><button type="button" class="chip">無</button></div>
-      <input id="modNote" maxlength="60" placeholder="說明，例：改輪框、降低車身" hidden>
+      <input id="modNote" maxlength="60" placeholder="說明改裝項目，例：改輪框、降低車身" hidden>
       <div class="err" id="e-mod"></div>
     </div>
     <div class="sec">車輛外觀照片<small>1～3 張，拍得到車頭和車牌</small></div>
@@ -153,7 +157,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   var LIFF_ID = '2011949076-1fqUEtE2';
   var $ = function(id){ return document.getElementById(id); };
   var idToken = '', disp = '', bound = false, goLabel = '送出車卡', photos = [], busy = false;
-  var FIELDS = ['name','phone','area','plate','model','seats','color'];
+  var FIELDS = ['name','phone','plate','model','seats','color'];
   var ZOD = ['鼠','牛','虎','兔','龍','蛇','馬','羊','猴','雞','狗','豬'], zodiac = '', yn = { wrap: null, mod: null };
 
   function fatal(msg){ $('loading').hidden = true; $('f').hidden = true; $('fatal').hidden = false; $('fatal').textContent = msg; }
@@ -161,6 +165,30 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     return fetch(BOT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) }).then(function(r){ return r.json(); });
   }
   function val(id){ return $(id).value.trim(); }
+
+  // 居住地區：縣市複選 → 每個縣市再選地區（可複選）
+  var TW = {"台北市":["中正區","大同區","中山區","松山區","大安區","萬華區","信義區","士林區","北投區","內湖區","南港區","文山區"],"新北市":["板橋區","三重區","中和區","永和區","新莊區","新店區","樹林區","鶯歌區","三峽區","淡水區","汐止區","瑞芳區","土城區","蘆洲區","五股區","泰山區","林口區","深坑區","石碇區","坪林區","三芝區","石門區","八里區","平溪區","雙溪區","貢寮區","金山區","萬里區","烏來區"],"基隆市":["仁愛區","信義區","中正區","中山區","安樂區","暖暖區","七堵區"],"桃園市":["桃園區","中壢區","平鎮區","八德區","楊梅區","蘆竹區","大溪區","龍潭區","龜山區","大園區","觀音區","新屋區","復興區"],"新竹市":["東區","北區","香山區"],"新竹縣":["竹北市","竹東鎮","新埔鎮","關西鎮","湖口鄉","新豐鄉","芎林鄉","橫山鄉","北埔鄉","寶山鄉","峨眉鄉","尖石鄉","五峰鄉"],"苗栗縣":["苗栗市","頭份市","竹南鎮","後龍鎮","通霄鎮","苑裡鎮","卓蘭鎮","造橋鄉","西湖鄉","頭屋鄉","公館鄉","銅鑼鄉","三義鄉","大湖鄉","獅潭鄉","三灣鄉","南庄鄉","泰安鄉"],"台中市":["中區","東區","南區","西區","北區","北屯區","西屯區","南屯區","太平區","大里區","霧峰區","烏日區","豐原區","后里區","石岡區","東勢區","和平區","新社區","潭子區","大雅區","神岡區","大肚區","沙鹿區","龍井區","梧棲區","清水區","大甲區","外埔區","大安區"],"彰化縣":["彰化市","員林市","和美鎮","鹿港鎮","溪湖鎮","二林鎮","田中鎮","北斗鎮","花壇鄉","芬園鄉","大村鄉","永靖鄉","伸港鄉","線西鄉","福興鄉","秀水鄉","埔心鄉","埔鹽鄉","大城鄉","芳苑鄉","竹塘鄉","社頭鄉","二水鄉","田尾鄉","埤頭鄉","溪州鄉"],"南投縣":["南投市","埔里鎮","草屯鎮","竹山鎮","集集鎮","名間鄉","鹿谷鄉","中寮鄉","魚池鄉","國姓鄉","水里鄉","信義鄉","仁愛鄉"],"雲林縣":["斗六市","斗南鎮","虎尾鎮","西螺鎮","土庫鎮","北港鎮","古坑鄉","大埤鄉","莿桐鄉","林內鄉","二崙鄉","崙背鄉","麥寮鄉","東勢鄉","褒忠鄉","台西鄉","元長鄉","四湖鄉","口湖鄉","水林鄉"],"嘉義市":["東區","西區"],"嘉義縣":["太保市","朴子市","布袋鎮","大林鎮","民雄鄉","溪口鄉","新港鄉","六腳鄉","東石鄉","義竹鄉","鹿草鄉","水上鄉","中埔鄉","竹崎鄉","梅山鄉","番路鄉","大埔鄉","阿里山鄉"],"台南市":["中西區","東區","南區","北區","安平區","安南區","永康區","歸仁區","新化區","左鎮區","玉井區","楠西區","南化區","仁德區","關廟區","龍崎區","官田區","麻豆區","佳里區","西港區","七股區","將軍區","學甲區","北門區","新營區","後壁區","白河區","東山區","六甲區","下營區","柳營區","鹽水區","善化區","大內區","山上區","新市區","安定區"],"高雄市":["新興區","前金區","苓雅區","鹽埕區","鼓山區","旗津區","前鎮區","三民區","楠梓區","小港區","左營區","仁武區","大社區","岡山區","路竹區","阿蓮區","田寮區","燕巢區","橋頭區","梓官區","彌陀區","永安區","湖內區","鳳山區","大寮區","林園區","鳥松區","大樹區","旗山區","美濃區","六龜區","內門區","杉林區","甲仙區","桃源區","那瑪夏區","茂林區","茄萣區"],"屏東縣":["屏東市","潮州鎮","東港鎮","恆春鎮","萬丹鄉","長治鄉","麟洛鄉","九如鄉","里港鄉","鹽埔鄉","高樹鄉","萬巒鄉","內埔鄉","竹田鄉","新埤鄉","枋寮鄉","新園鄉","崁頂鄉","林邊鄉","南州鄉","佳冬鄉","琉球鄉","車城鄉","滿州鄉","枋山鄉","三地門鄉","霧台鄉","瑪家鄉","泰武鄉","來義鄉","春日鄉","獅子鄉","牡丹鄉"],"宜蘭縣":["宜蘭市","羅東鎮","蘇澳鎮","頭城鎮","礁溪鄉","壯圍鄉","員山鄉","冬山鄉","五結鄉","三星鄉","大同鄉","南澳鄉"],"花蓮縣":["花蓮市","鳳林鎮","玉里鎮","新城鄉","吉安鄉","壽豐鄉","光復鄉","豐濱鄉","瑞穗鄉","富里鄉","秀林鄉","萬榮鄉","卓溪鄉"],"台東縣":["台東市","成功鎮","關山鎮","卑南鄉","鹿野鄉","池上鄉","東河鄉","長濱鄉","太麻里鄉","大武鄉","綠島鄉","海端鄉","延平鄉","金峰鄉","達仁鄉","蘭嶼鄉"],"澎湖縣":["馬公市","湖西鄉","白沙鄉","西嶼鄉","望安鄉","七美鄉"],"金門縣":["金城鎮","金湖鎮","金沙鎮","金寧鄉","烈嶼鄉","烏坵鄉"],"連江縣":["南竿鄉","北竿鄉","莒光鄉","東引鄉"]};
+  var area = {};  // 縣市 → [地區]
+  $('cityChips').innerHTML = Object.keys(TW).map(function(c){ return '<button type="button" class="chip">' + c + '</button>'; }).join('');
+  function renderArea(){
+    $('cityChips').querySelectorAll('.chip').forEach(function(c){ c.setAttribute('aria-pressed', String(!!area[c.textContent])); });
+    $('distBox').innerHTML = Object.keys(TW).filter(function(c){ return area[c]; }).map(function(c){
+      return '<div class="dist" data-city="' + c + '"><b>' + c + '：選地區（可複選）</b><div class="chips">' + TW[c].map(function(d){ return '<button type="button" class="chip" aria-pressed="' + (area[c].indexOf(d) >= 0) + '">' + d + '</button>'; }).join('') + '</div></div>';
+    }).join('');
+  }
+  $('cityChips').addEventListener('click', function(e){ var c = e.target.closest('.chip'); if (!c) return; var k = c.textContent; if (area[k]) delete area[k]; else area[k] = []; $('e-area').textContent = ''; renderArea(); });
+  $('distBox').addEventListener('click', function(e){
+    var c = e.target.closest('.chip'), box = e.target.closest('[data-city]'); if (!c || !box) return;
+    var L = area[box.getAttribute('data-city')], d = c.textContent, i = L.indexOf(d);
+    if (i >= 0) L.splice(i, 1); else L.push(d);
+    c.setAttribute('aria-pressed', String(i < 0)); $('e-area').textContent = '';
+  });
+  function areaText(){ return Object.keys(TW).filter(function(c){ return area[c]; }).map(function(c){ var o = TW[c]; return c + '（' + area[c].slice().sort(function(a, b){ return o.indexOf(a) - o.indexOf(b); }).join('、') + '）'; }).join('；'); }
+  function areaLoad(t){
+    area = {};
+    String(t || '').split(/[；;]/).forEach(function(p){ var m = p.trim().match(/^(.{3})(?:（(.*)）)?$/); if (!m || !TW[m[1]]) return; area[m[1]] = (m[2] || '').split('、').filter(function(d){ return TW[m[1]].indexOf(d) >= 0; }); });
+    renderArea();
+  }
 
   // 生肖
   $('zodiacChips').innerHTML = ZOD.map(function(z){ return '<button type="button" class="chip">' + z + '</button>'; }).join('');
@@ -245,7 +273,9 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     if (!val('name')) errs.name = '請填本名';
     else if (!/^[一-龥·．]{2,6}$|^[A-Za-z][A-Za-z.'-]*(\s+[A-Za-z][A-Za-z.'-]*)+$/.test(val('name')) || /^[小阿老][一-龥]$/.test(val('name'))) errs.name = '請填本名（駕照上的全名），不要填暱稱';
     if (!/^09\d{8}$/.test(phone)) errs.phone = '請填 10 碼手機號碼（09 開頭）';
-    if (!val('area')) errs.area = '請填居住地區';
+    var cs = Object.keys(area);
+    if (!cs.length) errs.area = '請選居住縣市';
+    else { var no = cs.filter(function(c){ return !area[c].length; }); if (no.length) errs.area = '請選 ' + no.join('、') + ' 的地區'; }
     if (!zodiac) errs.zodiac = '請選生肖';
     if (val('plate').replace(/[^A-Za-z0-9]/g, '').length < 4) errs.plate = '請填完整車牌';
     if (!brand) errs.brand = '請選廠牌';
@@ -257,7 +287,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     if (yn.mod === null) errs.mod = '請選有沒有改裝'; else if (yn.mod && !val('modNote')) errs.mod = '請簡單說明改裝內容';
     if (!photos.length) errs.photos = '請至少上傳 1 張車輛外觀照片';
     FIELDS.forEach(function(k){ $(k).classList.toggle('bad', !!errs[k]); $('e-' + k).textContent = errs[k] || ''; });
-    ['zodiac','brand','wrap','mod','photos'].forEach(function(k){ $('e-' + k).textContent = errs[k] || ''; });
+    ['area','zodiac','brand','wrap','mod','photos'].forEach(function(k){ $('e-' + k).textContent = errs[k] || ''; });
     var first = Object.keys(errs)[0];
     if (first){ var el = FIELDS.indexOf(first) >= 0 ? $(first) : $('e-' + first); if (FIELDS.indexOf(first) >= 0) el.focus(); el.scrollIntoView({ block: 'center' }); }
     return !first;
@@ -269,7 +299,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     if (!check()) return;
     $('go').disabled = true; $('go').textContent = '送出中…';
     post({ action: 'wedLiff', op: 'save', idToken: idToken, disp: disp,
-      card: { name: val('name'), phone: val('phone'), area: val('area'), zodiac: zodiac, plate: val('plate').toUpperCase(), brand: brandText(), model: val('model'), seats: val('seats'), color: val('color'),
+      card: { name: val('name'), phone: val('phone'), area: areaText(), zodiac: zodiac, plate: val('plate').toUpperCase(), brand: brandText(), model: val('model'), seats: val('seats'), color: val('color'),
         wrap: yn.wrap, wrapNote: val('wrapNote'), mod: yn.mod, modNote: val('modNote') } })
       .then(function(j){
         if (!j || !j.ok) throw new Error((j && j.error) || '送出失敗，請再試一次');
@@ -296,7 +326,8 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     bound = !!j.bound; photos = j.photos || [];
     var c = j.card;
     if (c){
-      ['name','phone','area','plate','model','seats','color'].forEach(function(k){ $(k).value = c[k] || ''; if ($(k)._sync) $(k)._sync(); });
+      ['name','phone','plate','model','seats','color'].forEach(function(k){ $(k).value = c[k] || ''; if ($(k)._sync) $(k)._sync(); });
+      areaLoad(c.area);
       if (c.zodiac) setZodiac(c.zodiac);
       if (c.brand){ if (BRANDS.indexOf(c.brand) >= 0) setBrand(c.brand); else { setBrand('其他'); $('brandOther').value = c.brand; } }
       if (c.saved){ setYn('wrap', !!c.wrap); setYn('mod', !!c.mod); }
