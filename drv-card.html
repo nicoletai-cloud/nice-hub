@@ -57,7 +57,10 @@ button.go:disabled{opacity:.6}
 .dates small{font-weight:400;color:var(--muted)}
 .tnote{color:var(--muted);font-size:13px;margin:10px 0 0}
 button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent);margin-top:10px}
-#docs .sec{margin-top:18px}
+.part{font-weight:700;font-size:19px;color:var(--accent);border-top:2px solid var(--line);padding-top:16px;margin-top:8px}
+.part small{display:block;font-weight:400;font-size:14px;color:var(--muted)}
+.part:first-child{border-top:0;padding-top:0;margin-top:0}
+.drow .st.pend,.ditem .st.pend{color:var(--accent)}
 [hidden]{display:none!important}
 </style>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js" charset="utf-8"></script>
@@ -74,6 +77,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
 
   <div class="note warn" id="docBanner" hidden style="margin:0 0 16px;cursor:pointer"></div>
   <form id="f" hidden novalidate>
+    <div class="part">第一部分　司機資料</div>
     <div class="field">
       <label for="name">姓名<small>請填駕照上的全名</small></label>
       <input id="name" autocomplete="name" maxlength="20" placeholder="例：王聰明" required>
@@ -90,6 +94,11 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       <div id="distBox"></div>
       <div class="err" id="e-area"></div>
     </div>
+    <div class="field" id="sec-licF">
+      <label>上傳駕照<small>正面一張，手機直接拍照即可</small></label>
+      <div class="drow" data-k="licF"></div>
+    </div>
+    <div class="part">第二部分　車輛資料</div>
     <div class="field">
       <label>廠牌</label>
       <div class="chips" id="brandChips">
@@ -122,7 +131,19 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       <input id="seats" type="number" inputmode="numeric" min="2" max="19" placeholder="例：5" required>
       <div class="err" id="e-seats"></div>
     </div>
-    <div class="sec">匯款帳號<small>車資匯款用，只有好好禮車看得到</small></div>
+    <div class="field" id="sec-regF">
+      <label>上傳行照<small>內頁一張</small></label>
+      <div class="drow" data-k="regF"></div>
+    </div>
+    <div class="field" id="sec-ins">
+      <label>上傳保險單<small>需包含強制險及任意險</small></label>
+      <div class="dmulti" data-k="ins"></div>
+    </div>
+    <div class="field" id="sec-car">
+      <label>車輛外觀照片<small>選填，看得到車頭和車牌</small></label>
+      <div class="dmulti" data-k="car"></div>
+    </div>
+    <div class="part">第三部分　匯款帳號<small>車資匯款用，只有好好禮車看得到</small></div>
     <div class="field">
       <label for="bankCode">銀行代碼<small>3 碼，例：822</small></label>
       <input id="bankCode" inputmode="numeric" autocomplete="off" maxlength="3" placeholder="例：822" required>
@@ -140,32 +161,17 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       <input id="holder" maxlength="20">
       <div class="err" id="e-holder"></div>
     </div>
+    <div class="note warn" id="dErr" hidden></div>
     <div class="note warn" id="srvErr" hidden></div>
     <button type="submit" class="go" id="go">送出車卡</button>
-  </form>
-
-  <div id="docs" hidden>
-    <h2 style="margin:28px 0 4px;font-size:20px">證件</h2>
-    <div class="note ok" id="dOk" hidden>✅ 證件都齊了，謝謝！換新證件時再回來更新就好。</div>
-    <div class="note warn" id="dMiss" hidden></div>
-    <div class="sec">駕照<small>正面一張</small></div>
-    <div class="drow" data-k="licF"></div>
-    <div class="sec">行照<small>正面一張</small></div>
-    <div class="drow" data-k="regF"></div>
-    <div class="sec">保險單<small>需包含強制險及任意險，最多 5 個檔案</small></div>
-    <div class="dmulti" data-k="ins"></div>
-    <div class="sec">車輛外觀照片<small>1～3 張，看得到車頭和車牌</small></div>
-    <div class="dmulti" data-k="car"></div>
-    <div class="note warn" id="dErr" hidden></div>
-    <button type="button" class="go" id="dSave">儲存</button>
     <p class="tnote">證件只存在好好禮車的雲端資料夾，只用來確認合法接案。</p>
-  </div>
+  </form>
 
   <div class="done" id="done" hidden>
     <div class="big">✅</div>
     <h2 id="doneTitle">綁定完成</h2>
     <p id="doneMsg"></p>
-    <button type="button" class="go" id="toDocs" hidden>下一步：上傳證件</button>
+    <button type="button" class="go" id="backDocs" hidden>回去補上傳證件</button>
     <button type="button" class="go ghost" id="close">回到聊天室</button>
   </div>
 </div>
@@ -184,13 +190,13 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   }
 
   // 居住地區：縣市複選 → 每個縣市再選地區（可複選）
-  var TW = {"台北市":["中正區","大同區","中山區","松山區","大安區","萬華區","信義區","士林區","北投區","內湖區","南港區","文山區"],"新北市":["板橋區","三重區","中和區","永和區","新莊區","新店區","樹林區","鶯歌區","三峽區","淡水區","汐止區","瑞芳區","土城區","蘆洲區","五股區","泰山區","林口區","深坑區","石碇區","坪林區","三芝區","石門區","八里區","平溪區","雙溪區","貢寮區","金山區","萬里區","烏來區"],"基隆市":["仁愛區","信義區","中正區","中山區","安樂區","暖暖區","七堵區"],"桃園市":["桃園區","中壢區","平鎮區","八德區","楊梅區","蘆竹區","大溪區","龍潭區","龜山區","大園區","觀音區","新屋區","復興區"],"新竹市":["東區","北區","香山區"],"新竹縣":["竹北市","竹東鎮","新埔鎮","關西鎮","湖口鄉","新豐鄉","芎林鄉","橫山鄉","北埔鄉","寶山鄉","峨眉鄉","尖石鄉","五峰鄉"],"苗栗縣":["苗栗市","頭份市","竹南鎮","後龍鎮","通霄鎮","苑裡鎮","卓蘭鎮","造橋鄉","西湖鄉","頭屋鄉","公館鄉","銅鑼鄉","三義鄉","大湖鄉","獅潭鄉","三灣鄉","南庄鄉","泰安鄉"],"台中市":["中區","東區","南區","西區","北區","北屯區","西屯區","南屯區","太平區","大里區","霧峰區","烏日區","豐原區","后里區","石岡區","東勢區","和平區","新社區","潭子區","大雅區","神岡區","大肚區","沙鹿區","龍井區","梧棲區","清水區","大甲區","外埔區","大安區"],"彰化縣":["彰化市","員林市","和美鎮","鹿港鎮","溪湖鎮","二林鎮","田中鎮","北斗鎮","花壇鄉","芬園鄉","大村鄉","永靖鄉","伸港鄉","線西鄉","福興鄉","秀水鄉","埔心鄉","埔鹽鄉","大城鄉","芳苑鄉","竹塘鄉","社頭鄉","二水鄉","田尾鄉","埤頭鄉","溪州鄉"],"南投縣":["南投市","埔里鎮","草屯鎮","竹山鎮","集集鎮","名間鄉","鹿谷鄉","中寮鄉","魚池鄉","國姓鄉","水里鄉","信義鄉","仁愛鄉"],"雲林縣":["斗六市","斗南鎮","虎尾鎮","西螺鎮","土庫鎮","北港鎮","古坑鄉","大埤鄉","莿桐鄉","林內鄉","二崙鄉","崙背鄉","麥寮鄉","東勢鄉","褒忠鄉","台西鄉","元長鄉","四湖鄉","口湖鄉","水林鄉"],"嘉義市":["東區","西區"],"嘉義縣":["太保市","朴子市","布袋鎮","大林鎮","民雄鄉","溪口鄉","新港鄉","六腳鄉","東石鄉","義竹鄉","鹿草鄉","水上鄉","中埔鄉","竹崎鄉","梅山鄉","番路鄉","大埔鄉","阿里山鄉"],"台南市":["中西區","東區","南區","北區","安平區","安南區","永康區","歸仁區","新化區","左鎮區","玉井區","楠西區","南化區","仁德區","關廟區","龍崎區","官田區","麻豆區","佳里區","西港區","七股區","將軍區","學甲區","北門區","新營區","後壁區","白河區","東山區","六甲區","下營區","柳營區","鹽水區","善化區","大內區","山上區","新市區","安定區"],"高雄市":["新興區","前金區","苓雅區","鹽埕區","鼓山區","旗津區","前鎮區","三民區","楠梓區","小港區","左營區","仁武區","大社區","岡山區","路竹區","阿蓮區","田寮區","燕巢區","橋頭區","梓官區","彌陀區","永安區","湖內區","鳳山區","大寮區","林園區","鳥松區","大樹區","旗山區","美濃區","六龜區","內門區","杉林區","甲仙區","桃源區","那瑪夏區","茂林區","茄萣區"],"屏東縣":["屏東市","潮州鎮","東港鎮","恆春鎮","萬丹鄉","長治鄉","麟洛鄉","九如鄉","里港鄉","鹽埔鄉","高樹鄉","萬巒鄉","內埔鄉","竹田鄉","新埤鄉","枋寮鄉","新園鄉","崁頂鄉","林邊鄉","南州鄉","佳冬鄉","琉球鄉","車城鄉","滿州鄉","枋山鄉","三地門鄉","霧台鄉","瑪家鄉","泰武鄉","來義鄉","春日鄉","獅子鄉","牡丹鄉"],"宜蘭縣":["宜蘭市","羅東鎮","蘇澳鎮","頭城鎮","礁溪鄉","壯圍鄉","員山鄉","冬山鄉","五結鄉","三星鄉","大同鄉","南澳鄉"],"花蓮縣":["花蓮市","鳳林鎮","玉里鎮","新城鄉","吉安鄉","壽豐鄉","光復鄉","豐濱鄉","瑞穗鄉","富里鄉","秀林鄉","萬榮鄉","卓溪鄉"],"台東縣":["台東市","成功鎮","關山鎮","卑南鄉","鹿野鄉","池上鄉","東河鄉","長濱鄉","太麻里鄉","大武鄉","綠島鄉","海端鄉","延平鄉","金峰鄉","達仁鄉","蘭嶼鄉"],"澎湖縣":["馬公市","湖西鄉","白沙鄉","西嶼鄉","望安鄉","七美鄉"],"金門縣":["金城鎮","金湖鎮","金沙鎮","金寧鄉","烈嶼鄉","烏坵鄉"],"連江縣":["南竿鄉","北竿鄉","莒光鄉","東引鄉"]};
+  var TW = {"台北市":["中正區","大同區","中山區","松山區","大安區","萬華區","信義區","士林區","北投區","內湖區","南港區","文山區"],"新北市":["板橋區","三重區","中和區","永和區","新莊區","新店區","樹林區","鶯歌區","三峽區","淡水區","汐止區","瑞芳區","土城區","蘆洲區","五股區","泰山區","林口區","深坑區","石碇區","坪林區","三芝區","石門區","八里區","平溪區","雙溪區","貢寮區","金山區","萬里區","烏來區"],"基隆市":["仁愛區","信義區","中正區","中山區","安樂區","暖暖區","七堵區"],"桃園市":["桃園區","中壢區","平鎮區","八德區","楊梅區","蘆竹區","大溪區","龍潭區","龜山區","大園區","觀音區","新屋區","復興區"],"新竹市":["東區","北區","香山區"],"新竹縣":["竹北市","竹東鎮","新埔鎮","關西鎮","湖口鄉","新豐鄉","芎林鄉","橫山鄉","北埔鄉","寶山鄉","峨眉鄉","尖石鄉","五峰鄉"],"苗栗縣":["苗栗市","頭份市","竹南鎮","後龍鎮","通霄鎮","苑裡鎮","卓蘭鎮","造橋鄉","西湖鄉","頭屋鄉","公館鄉","銅鑼鄉","三義鄉","大湖鄉","獅潭鄉","三灣鄉","南庄鄉","泰安鄉"],"台中市":["中區","東區","南區","西區","北區","北屯區","西屯區","南屯區","太平區","大里區","霧峰區","烏日區","豐原區","后里區","石岡區","東勢區","和平區","新社區","潭子區","大雅區","神岡區","大肚區","沙鹿區","龍井區","梧棲區","清水區","大甲區","外埔區","大安區"],"彰化縣":["彰化市","員林市","和美鎮","鹿港鎮","溪湖鎮","二林鎮","田中鎮","北斗鎮","花壇鄉","芬園鄉","大村鄉","永靖鄉","伸港鄉","線西鄉","福興鄉","秀水鄉","埔心鄉","埔鹽鄉","大城鄉","芳苑鄉","竹塘鄉","社頭鄉","二水鄉","田尾鄉","埤頭鄉","溪州鄉"],"南投縣":["南投市","埔里鎮","草屯鎮","竹山鎮","集集鎮","名間鄉","鹿谷鄉","中寮鄉","魚池鄉","國姓鄉","水里鄉","信義鄉","仁愛鄉"],"雲林縣":["斗六市","斗南鎮","虎尾鎮","西螺鎮","土庫鎮","北港鎮","古坑鄉","大埤鄉","莿桐鄉","林內鄉","二崙鄉","崙背鄉","麥寮鄉","東勢鄉","褒忠鄉","台西鄉","元長鄉","四湖鄉","口湖鄉","水林鄉"],"嘉義市":["東區","西區"],"嘉義縣":["太保市","朴子市","布袋鎮","大林鎮","民雄鄉","溪口鄉","新港鄉","六腳鄉","東石鄉","義竹鄉","鹿草鄉","水上鄉","中埔鄉","竹崎鄉","梅山鄉","番路鄉","大埔鄉","阿里山鄉"],"台南市":["中西區","東區","南區","北區","安平區","安南區","永康區","歸仁區","新化區","左鎮區","玉井區","楠西區","南化區","仁德區","關廟區","龍崎區","官田區","麻豆區","佳里區","西港區","七股區","將軍區","學甲區","北門區","新營區","後壁區","白河區","東山區","六甲區","下營區","柳營區","鹽水區","善化區","大內區","山上區","新市區","安定區"],"高雄市":["新興區","前金區","苓雅區","鹽埕區","鼓山區","旗津區","前鎮區","三民區","楠梓區","小港區","左營區","仁武區","大社區","岡山區","路竹區","阿蓮區","田寮區","燕巢區","橋頭區","梓官區","彌陀區","永安區","湖內區","鳳山區","大寮區","林園區","鳥松區","大樹區","旗山區","美濃區","六龜區","內門區","杉林區","甲仙區","桃源區","那瑪夏區","茂林區","茄萣區"],"屏東縣":["屏東市","潮州鎮","東港鎮","恆春鎮","萬丹鄉","長治鄉","麟洛鄉","九如鄉","里港鄉","鹽埔鄉","高樹鄉","萬巒鄉","內埔鄉","竹田鄉","新埤鄉","枋寮鄉","新園鄉","崁頂鄉","林邊鄉","南州鄉","佳冬鄉","琉球鄉","車城鄉","滿州鄉","枋山鄉","三地門鄉","霧台鄉","瑪家鄉","泰武鄉","來義鄉","春日鄉","獅子鄉","牡丹鄉"],"宜蘭縣":["宜蘭市","羅東鎮","蘇澳鎮","頭城鎮","礁溪鄉","壯圍鄉","員山鄉","冬山鄉","五結鄉","三星鄉","大同鄉","南澳鄉"],"花蓮縣":["花蓮市","鳳林鎮","玉里鎮","新城鄉","吉安鄉","壽豐鄉","光復鄉","豐濱鄉","瑞穗鄉","富里鄉","秀林鄉","萬榮鄉","卓溪鄉"],"台東縣":["台東市","成功鎮","關山鎮","卑南鄉","鹿野鄉","池上鄉","東河鄉","長濱鄉","太麻里鄉","大武鄉","綠島鄉","海端鄉","延平鄉","金峰鄉","達仁鄉","蘭嶼鄉"]};
   var area = {};  // 縣市 → [地區]
   $('cityChips').innerHTML = Object.keys(TW).map(function(c){ return '<button type="button" class="chip">' + c + '</button>'; }).join('');
   function renderArea(){
     $('cityChips').querySelectorAll('.chip').forEach(function(c){ c.setAttribute('aria-pressed', String(!!area[c.textContent])); });
     $('distBox').innerHTML = Object.keys(TW).filter(function(c){ return area[c]; }).map(function(c){
-      return '<div class="dist" data-city="' + c + '"><b>' + c + '：選地區（可複選）</b><div class="chips">' + TW[c].map(function(d){ return '<button type="button" class="chip" aria-pressed="' + (area[c].indexOf(d) >= 0) + '">' + d + '</button>'; }).join('') + '</div></div>';
+      return '<div class="dist" data-city="' + c + '"><b>' + c + '：選地區</b><div class="chips">' + TW[c].map(function(d){ return '<button type="button" class="chip" aria-pressed="' + (area[c].indexOf(d) >= 0) + '">' + d + '</button>'; }).join('') + '</div></div>';
     }).join('');
   }
   $('cityChips').addEventListener('click', function(e){ var c = e.target.closest('.chip'); if (!c) return; var k = c.textContent; if (area[k]) delete area[k]; else area[k] = []; $('e-area').textContent = ''; renderArea(); });
@@ -309,49 +315,29 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   $('bankCode').addEventListener('input', showBank);
   $('plate').addEventListener('blur', function(){ $('plate').value = $('plate').value.toUpperCase(); });
 
-  $('f').addEventListener('submit', function(e){
-    e.preventDefault();
-    $('srvErr').hidden = true;
-    if (!check()) return;
-    $('go').disabled = true; $('go').textContent = '送出中…';
-    post({ action: 'drvLiff', op: 'save', idToken: idToken, disp: disp,
-      card: { name: val('name'), phone: val('phone'), plate: val('plate').toUpperCase(), car: (brandText() + ' ' + val('car')).trim(), color: val('color'), seats: val('seats'),
-        bank: $('bank').value, acct: val('acct').replace(/[\s-]/g, ''), holder: val('holder'), area: areaText() } })
-      .then(function(j){
-        if (!j || !j.ok) throw new Error((j && j.error) || '送出失敗，請再試一次');
-        if (!j.done){ $('srvErr').hidden = false; $('srvErr').textContent = (j.msg || '資料有誤，請檢查後再送出').split('\n')[0]; return; }
-        $('f').hidden = true; $('done').hidden = false; $('ownLine').hidden = true;
-        $('doneTitle').textContent = bound ? '車卡已更新' : '綁定完成';
-        $('doneMsg').textContent = bound ? '資料已更新，謝謝！' : '之後接單不用再填資料。\n車子或電話有變，再從選單按「綁定車卡」修改就好。\n\n接下來請上傳駕照、行照、保險單和車輛照片。';
-        $('toDocs').hidden = true; bound = true; loadDocsBelow().then(function(){ $('docs').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
-        try { if (liff.isInClient()) liff.sendMessages([{ type: 'text', text: bound ? '✅ 資料已用表單更新' : '✅ 資料已用表單送出' }]).catch(function(){}); } catch (x) {}
-      })
-      .catch(function(err){ $('srvErr').hidden = false; $('srvErr').textContent = err.message || String(err); })
-      .then(function(){ $('go').disabled = false; $('go').textContent = goLabel; });
-  });
-  $('close').addEventListener('click', function(){ try { liff.closeWindow(); } catch (x) {} });
-
-  /* ---------- 證件上傳 ---------- */
-  var DK = { licF: '駕照正面', regF: '行照正面', ins: '保險單', car: '車輛外觀' }, DMAX = { ins: 5, car: 3 };
-  var dFiles = {}, dBusy = false;
+  /* ---------- 證件（同一張表單裡）：已綁定的司機選了就上傳；第一次填的先暫存，按送出後一起上傳 ---------- */
+  var DK = { licF: '駕照正面', regF: '行照內頁', ins: '保險單', car: '車輛外觀' }, DMAX = { licF: 1, regF: 1, ins: 5, car: 3 }, NEED = ['licF', 'regF', 'ins'];
+  var dFiles = {}, pend = { licF: [], regF: [], ins: [], car: [] }, dBusy = false, docsOk = false;
   function md(t){ var d = new Date(+t); return (d.getMonth() + 1) + '/' + d.getDate(); }
   function pickBtn(k, label){ return '<label class="pick"><input type="file" accept="image/*,application/pdf" data-up="' + k + '" hidden>' + label + '</label>'; }
-  function renderDocs(j){
-    dFiles = j.files || {};
+  function cnt(k){ return (dFiles[k] || []).length + pend[k].length; }
+  function missList(){ return NEED.filter(function(k){ return !cnt(k); }).map(function(k){ return DK[k]; }); }
+  function renderDocs(){
     document.querySelectorAll('.drow').forEach(function(el){
-      var k = el.getAttribute('data-k'), f = (dFiles[k] || [])[0];
-      el.innerHTML = '<span class="lb">' + DK[k] + '</span><span class="st' + (f ? ' ok' : '') + '">' + (f ? '✓ 已上傳 ' + md(f.at) : '未上傳') + '</span>' + pickBtn(k, f ? '重新上傳' : '拍照／選檔');
+      var k = el.getAttribute('data-k'), f = (dFiles[k] || [])[0], p = pend[k][0];
+      el.innerHTML = '<span class="lb">' + DK[k] + '</span>' + (p ? '<span class="st pend">✓ 已選，送出時上傳</span>' : '<span class="st' + (f ? ' ok' : '') + '">' + (f ? '✓ 已上傳 ' + md(f.at) : '未上傳') + '</span>') + pickBtn(k, f || p ? '重新選' : '拍照／選檔');
     });
     document.querySelectorAll('.dmulti').forEach(function(el){
-      var k = el.getAttribute('data-k'), L = dFiles[k] || [];
+      var k = el.getAttribute('data-k'), L = dFiles[k] || [], P = pend[k], n = L.length + P.length;
       el.innerHTML = L.map(function(f, i){ return '<div class="ditem"><span class="lb">' + DK[k] + ' ' + (i + 1) + '</span><span class="st ok">✓ ' + md(f.at) + '</span><button type="button" class="del" data-del="' + k + '|' + f.id + '">刪除</button></div>'; }).join('') +
-        (L.length < DMAX[k] ? '<div class="ditem"><span class="lb">' + (L.length ? '再加一個' : DK[k]) + '</span><span class="st">' + L.length + ' / ' + DMAX[k] + '</span>' + pickBtn(k, '拍照／選檔') + '</div>' : '');
+        P.map(function(f, i){ return '<div class="ditem"><span class="lb">' + DK[k] + ' ' + (L.length + i + 1) + '</span><span class="st pend">已選，送出時上傳</span><button type="button" class="del" data-pdel="' + k + '|' + i + '">移除</button></div>'; }).join('') +
+        (n < DMAX[k] ? '<div class="ditem"><span class="lb">' + (n ? '再加一個' : DK[k]) + '</span><span class="st">' + n + ' / ' + DMAX[k] + '</span>' + pickBtn(k, '拍照／選檔') + '</div>' : '');
     });
-    var d = j.docs || {};
-    $('dOk').hidden = !d.ok; $('dMiss').hidden = !!d.ok || !(d.miss || []).length;
-    if (!$('f').hidden){ $('docBanner').hidden = !!d.ok; if (!d.ok) $('docBanner').innerHTML = '📄 還有證件沒上傳：<b>' + (d.miss || []).join('、') + '</b><br><small>請往下滑到「證件」上傳，補齊後才能正常接單 ↓</small>'; }
-    $('dMiss').textContent = '還缺：' + (d.miss || []).join('、');
+    var miss = missList();
+    $('docBanner').hidden = !miss.length || $('f').hidden;
+    if (miss.length) $('docBanner').innerHTML = '📄 還有證件沒上傳：<b>' + miss.join('、') + '</b><br><small>點這裡跳到要補的地方，補齊後才能正常接單</small>';
   }
+  function setDocs(j){ if (j && j.files) dFiles = j.files; if (j && j.docs) docsOk = !!j.docs.ok; renderDocs(); }
   function shrink(file){
     return new Promise(function(res){
       if (!/^image\//.test(file.type) || /heic|heif/i.test(file.type)) return res(file);
@@ -365,59 +351,72 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   }
   function b64(blob){ return new Promise(function(res, rej){ var fr = new FileReader(); fr.onload = function(){ res(String(fr.result).split(',')[1] || ''); }; fr.onerror = rej; fr.readAsDataURL(blob); }); }
   function dErr(m){ $('dErr').hidden = !m; $('dErr').textContent = m || ''; }
+  function upOne(k, file){
+    return shrink(file).then(function(b){ if (b.size > 9 * 1024 * 1024) throw new Error('檔案太大（超過 9MB），請改拍照上傳');
+      var mime = b.type || file.type || 'image/jpeg'; return b64(b).then(function(s){ return post({ action: 'drvLiff', op: 'upload', idToken: idToken, kind: k, mime: mime, b64: s }); }); })
+      .then(function(j){ if (!j || !j.ok) throw new Error((j && j.error) || '上傳失敗，請再試一次'); setDocs(j); return j; });
+  }
   document.addEventListener('change', function(e){
     var k = e.target.getAttribute && e.target.getAttribute('data-up'); if (!k || !e.target.files || !e.target.files[0]) return;
-    var file = e.target.files[0]; e.target.value = '';
-    if (dBusy) return; dBusy = true; dErr('');
+    var file = e.target.files[0]; e.target.value = ''; dErr('');
+    if (!bound){ if (DMAX[k] === 1) pend[k] = [file]; else if (cnt(k) < DMAX[k]) pend[k].push(file); renderDocs(); return; }
+    if (dBusy) return; dBusy = true;
     var lab = e.target.parentNode; lab.lastChild.textContent = '上傳中…';
-    shrink(file).then(function(b){ if (b.size > 9 * 1024 * 1024) throw new Error('檔案太大（超過 9MB），請改拍照上傳');
-      var mime = b.type || file.type || 'image/jpeg'; return b64(b).then(function(s){ return post({ action: 'drvLiff', op: 'upload', idToken: idToken, kind: k, mime: mime, b64: s }); }); })
-      .then(function(j){ if (!j || !j.ok) throw new Error((j && j.error) || '上傳失敗，請再試一次'); renderDocs(j); })
-      .catch(function(err){ dErr(err.message || String(err)); lab.lastChild.textContent = '再試一次'; })
-      .then(function(){ dBusy = false; });
+    upOne(k, file).catch(function(err){ dErr(err.message || String(err)); lab.lastChild.textContent = '再試一次'; }).then(function(){ dBusy = false; });
   });
   document.addEventListener('click', function(e){
+    var q = e.target.closest && e.target.closest('[data-pdel]');
+    if (q){ var a = q.getAttribute('data-pdel').split('|'); pend[a[0]].splice(+a[1], 1); renderDocs(); return; }
     var b = e.target.closest && e.target.closest('[data-del]'); if (!b || dBusy) return;
     var p = b.getAttribute('data-del').split('|'); dBusy = true; b.textContent = '刪除中…';
-    post({ action: 'drvLiff', op: 'docdel', idToken: idToken, kind: p[0], id: p[1] }).then(function(j){ if (!j || !j.ok) throw new Error((j && j.error) || '刪除失敗'); renderDocs(j); })
+    post({ action: 'drvLiff', op: 'docdel', idToken: idToken, kind: p[0], id: p[1] }).then(function(j){ if (!j || !j.ok) throw new Error((j && j.error) || '刪除失敗'); setDocs(j); })
       .catch(function(err){ dErr(err.message || String(err)); }).then(function(){ dBusy = false; });
   });
-  $('dSave').addEventListener('click', function(){
-    if (dBusy) return; dErr('');
-    dBusy = true; $('dSave').textContent = '儲存中，請稍等…';
-    post({ action: 'drvLiff', op: 'docsave', idToken: idToken })
-      .then(function(j){ if (!j || !j.ok) throw new Error((j && j.error) || '儲存失敗'); renderDocs(j);
-        $('docBanner').hidden = !!(j.docs && j.docs.ok);
-        if (j.docs && j.docs.ok){ $('f').hidden = true; $('docs').hidden = true; $('done').hidden = false; $('toDocs').hidden = true; $('doneTitle').textContent = '證件已上傳完成';
-          $('doneMsg').textContent = '謝謝！證件換新時，再傳「上傳證件」更新就好。'; try { if (liff.isInClient()) liff.sendMessages([{ type: 'text', text: '✅ 證件已上傳完成' }]).catch(function(){}); } catch (x) {} }
-        else { window.scrollTo(0, 0); } })
-      .catch(function(err){ dErr(err.message || String(err)); }).then(function(){ dBusy = false; $('dSave').textContent = '儲存'; });
-  });
-  function openDocs(){
-    $('ownLine').hidden = true; $('f').hidden = true; $('done').hidden = true; $('loading').hidden = false;
-    $('title').textContent = '上傳證件'; $('lead').textContent = '用手機直接拍照就可以，每一項上傳後會顯示 ✓。';
-    return post({ action: 'drvLiff', op: 'docs', idToken: idToken }).then(function(j){
-      if (!j || !j.ok) throw new Error((j && j.error) || '讀取失敗，請關掉後重新開啟');
-      renderDocs(j); $('loading').hidden = true; $('docs').hidden = false;
-    }).catch(function(err){ fatal(err && err.message ? err.message : '讀取失敗'); });
-  }
-  $('toDocs').addEventListener('click', openDocs);
-  $('docBanner').addEventListener('click', function(){ $('docs').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
-  // 同一個畫面：車卡資料在上、證件在下（像禮車助手），缺件時最上面提醒
-  function loadDocsBelow(){
-    return post({ action: 'drvLiff', op: 'docs', idToken: idToken }).then(function(j){
-      if (!j || !j.ok) return;
-      renderDocs(j); $('docs').hidden = false;
-      var d = j.docs || {}, miss = d.miss || [];
-      $('docBanner').hidden = !!d.ok;
-      if (!d.ok) $('docBanner').innerHTML = '📄 還有證件沒上傳：<b>' + miss.join('、') + '</b><br><small>請往下滑到「證件」上傳，補齊後才能正常接單 ↓</small>';
-    }).catch(function(){});
-  }
+  function jumpMiss(){ var k = NEED.filter(function(k){ return !cnt(k); })[0]; if (k) $('sec-' + k).scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+  $('docBanner').addEventListener('click', jumpMiss);
+  function loadDocs(){ return post({ action: 'drvLiff', op: 'docs', idToken: idToken }).then(function(j){ if (j && j.ok) setDocs(j); }).catch(function(){}); }
   function wantDocs(){
     var q = location.search || '';
     try { var st = new URLSearchParams(q).get('liff.state'); if (st) q += '&' + decodeURIComponent(st).replace(/^\?/, ''); } catch (x) {}
     return /(^|[?&])p=docs\b/.test(q);
   }
+
+  $('f').addEventListener('submit', function(e){
+    e.preventDefault();
+    $('srvErr').hidden = true; dErr('');
+    if (dBusy) return;
+    if (!check()) return;
+    var wasBound = bound;
+    $('go').disabled = true; $('go').textContent = '送出中…'; dBusy = true;
+    post({ action: 'drvLiff', op: 'save', idToken: idToken, disp: disp,
+      card: { name: val('name'), phone: val('phone'), plate: val('plate').toUpperCase(), car: (brandText() + ' ' + val('car')).trim(), color: val('color'), seats: val('seats'),
+        bank: $('bank').value, acct: val('acct').replace(/[\s-]/g, ''), holder: val('holder'), area: areaText() } })
+      .then(function(j){
+        if (!j || !j.ok) throw new Error((j && j.error) || '送出失敗，請再試一次');
+        if (!j.done){ $('srvErr').hidden = false; $('srvErr').textContent = (j.msg || '資料有誤，請檢查後再送出').split('\n')[0]; return; }
+        bound = true;
+        // 暫存的證件依序上傳
+        var jobs = []; NEED.concat(['car']).forEach(function(k){ pend[k].forEach(function(f){ jobs.push([k, f]); }); });
+        var upErr = '', chain = Promise.resolve();
+        jobs.forEach(function(x, i){ chain = chain.then(function(){ $('go').textContent = '上傳證件 ' + (i + 1) + ' / ' + jobs.length + '…';
+          return upOne(x[0], x[1]).then(function(){ var L = pend[x[0]], at = L.indexOf(x[1]); if (at >= 0) L.splice(at, 1); }, function(err){ upErr = err.message || String(err); }); }); });
+        return chain.then(function(){ $('go').textContent = '儲存中…'; return post({ action: 'drvLiff', op: 'docsave', idToken: idToken }).then(setDocs, function(){}); })
+          .then(function(){
+            var miss = missList();
+            $('f').hidden = true; $('docBanner').hidden = true; $('done').hidden = false; $('ownLine').hidden = true;
+            $('doneTitle').textContent = wasBound ? '車卡已更新' : '綁定完成';
+            $('doneMsg').textContent = (wasBound ? '資料已更新，謝謝！' : '之後接單不用再填資料。\n車子或電話有變，再從選單開車卡修改就好。') +
+              (upErr ? '\n\n⚠️ 有證件沒傳成功：' + upErr : '') +
+              (miss.length ? '\n\n📄 還缺：' + miss.join('、') + '\n請補上傳，補齊後才能正常接單。' : '\n\n✅ 證件都齊了，謝謝！');
+            $('backDocs').hidden = !miss.length && !upErr;
+            try { if (liff.isInClient()) liff.sendMessages([{ type: 'text', text: wasBound ? '✅ 資料已用表單更新' : '✅ 資料已用表單送出' }]).catch(function(){}); } catch (x) {}
+          });
+      })
+      .catch(function(err){ $('srvErr').hidden = false; $('srvErr').textContent = err.message || String(err); })
+      .then(function(){ dBusy = false; $('go').disabled = false; goLabel = bound ? '送出更新' : goLabel; $('go').textContent = goLabel; if (bound){ $('name').readOnly = true; $('title').textContent = '更新車卡'; } });
+  });
+  $('close').addEventListener('click', function(){ try { liff.closeWindow(); } catch (x) {} });
+  $('backDocs').addEventListener('click', function(){ $('done').hidden = true; $('f').hidden = false; renderDocs(); setTimeout(jumpMiss, 50); });
 
   fetch(BOT + '?action=drvLiffCfg').then(function(r){ return r.json(); }).then(function(c){
     if (!c || !c.liffId) throw new Error('車卡表單還沒設定完成，請回聊天室用文字格式填寫。');
@@ -426,7 +425,6 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     if (!liff.isLoggedIn()){ liff.login({ redirectUri: location.href }); return null; }
     idToken = liff.getIDToken() || '';
     return liff.getProfile().then(function(p){ disp = p.displayName || ''; }, function(){}).then(function(){
-      if (wantDocs()) return openDocs().then(function(){ return null; });
       return post({ action: 'drvLiff', op: 'load', idToken: idToken });
     });
   }).then(function(j){
@@ -444,9 +442,9 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       showBank();
       $('name').readOnly = true;
       goLabel = '送出更新'; $('go').textContent = goLabel;
-      loadDocsBelow();
     }
-    $('loading').hidden = true; $('f').hidden = false;
+    $('loading').hidden = true; $('f').hidden = false; renderDocs();
+    if (bound) loadDocs().then(function(){ if (wantDocs()) jumpMiss(); });
   }).catch(function(err){ fatal(err && err.message ? err.message : '讀取失敗，請關掉後重新開啟'); });
 })();
 </script>
