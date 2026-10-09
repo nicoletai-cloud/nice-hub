@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>禮車車卡｜好好禮車</title>
+<title>禮車車卡｜禮車助手</title>
 <style>
 :root{--bg:#f8f5f0;--surface:#fff;--fg:#2f2a24;--muted:#7a7066;--line:#e4dbce;--accent:#8a6d43;--accent-ink:#fff;--warn:#b4532a;--warn-soft:#fbeee6;--ok:#2f7d4f;--ok-soft:#e8f4ec}
 @media (prefers-color-scheme:dark){:root{--bg:#1d1a17;--surface:#26221e;--fg:#f1ebe3;--muted:#b3a899;--line:#3b352e;--accent:#c9a46b;--accent-ink:#1d1a17;--warn:#f0a07a;--warn-soft:#3a2a22;--ok:#7fc79a;--ok-soft:#1f3328}}
@@ -66,7 +66,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
 </head>
 <body>
 <div class="wrap">
-  <div class="brand">好好禮車 禮車助手</div>
+  <div class="brand">禮車助手</div>
   <h1 id="title">填寫禮車車卡</h1>
   <p class="lead" id="lead">填好按送出就完成綁定，之後派車不用再填資料。</p>
   <div class="note warn" id="ownLine" style="margin:0 0 16px">⚠️ 請用<b>駕駛本人</b>的 LINE 開啟並填寫。<br>這個 LINE 會綁定成司機帳號，之後的派車通知都會傳到這裡，請不要用家人或車行的 LINE 代填。</div>
@@ -174,7 +174,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     <button type="button" class="go ghost" id="carDel" hidden>刪除這台車</button>
     <div class="note warn" id="srvErr" hidden></div>
     <button type="submit" class="go" id="go">送出車卡</button>
-    <p class="tnote">資料只給好好禮車派車使用。</p>
+    <p class="tnote">資料只用在禮車派車安排，不會公開。</p>
   </form>
 
   <div class="done" id="done" hidden>
