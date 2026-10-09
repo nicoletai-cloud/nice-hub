@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>禮車車卡｜禮車助手</title>
+<script>try{var m=decodeURIComponent(location.search).match(/[?&]p=(lesson|post)\b/);if(m)document.title=m[1]==="lesson"?"禮車司機教案":"負責人發文"}catch(e){}</script>
 <meta name="description" content="填寫禮車車卡，之後派車不用再填資料。">
 <meta property="og:title" content="禮車車卡｜禮車助手">
 <meta property="og:description" content="填寫禮車車卡，之後派車不用再填資料。">
@@ -559,7 +560,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   var LIFF_ID = '2011949076-1fqUEtE2', idToken = '';
   function post(body){ body.idToken = idToken; return fetch(BOT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) }).then(function(r){ return r.json(); }); }
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-  document.title = MODE === 'lesson' ? '禮車司機教案｜好好禮車' : '負責人發文｜好好禮車';
+  document.title = MODE === 'lesson' ? '禮車司機教案' : '負責人發文';
   var css = document.createElement('style');
   css.textContent = '.lx{max-width:640px;margin:0 auto;padding:16px 16px calc(40px + env(safe-area-inset-bottom))}' +
     '.lx h1{font-size:22px;margin:2px 0}.lx .sub{color:var(--muted);font-size:14px;margin:0 0 12px}' +
@@ -574,11 +575,11 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     '.lx select{font:inherit;font-size:16px;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-height:48px;width:100%}';
   document.head.appendChild(css);
   var root = document.createElement('div'); root.className = 'lx';
-  root.innerHTML = '<div class="brand">好好禮車 NICE WEDDING CAR</div><div id="lbody"><div class="state">讀取中…</div></div>';
+  root.innerHTML = '<div id="lbody"><div class="state">讀取中…</div></div>';
   function show(){ Array.prototype.forEach.call(document.body.children, function(e){ if (e.tagName !== 'SCRIPT' && e !== root) e.hidden = true; }); if (!root.parentNode) document.body.appendChild(root); }
   function body(h){ show(); document.getElementById('lbody').innerHTML = h; }
   function fail(msg){ body('<div class="note warn" style="margin-top:20px">' + esc(msg) + '</div>'); }
-  function needCard(){ body('<h1>' + (MODE === 'lesson' ? '禮車司機教案' : '負責人發文') + '</h1><div class="note warn" style="margin-top:14px">這個頁面只開放給好好禮車的合作司機。\n請先填寫禮車車卡完成綁定，再回來開啟。</div>' +
+  function needCard(){ body('<h1>' + (MODE === 'lesson' ? '禮車司機教案' : '負責人發文') + '</h1><div class="note warn" style="margin-top:14px">這個頁面只開放給合作司機。\n請先填寫禮車車卡完成綁定，再回來開啟。</div>' +
     '<button class="go" id="toCard" style="margin-top:16px">📝 填寫禮車車卡</button>');
     document.getElementById('toCard').onclick = function(){ location.href = 'https://liff.line.me/' + LIFF_ID; }; }
   function copyText(t){
@@ -651,7 +652,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   function minus(t, n){ var m = String(t || '').match(/^(\d{1,2}):(\d{2})/); if (!m) return ''; var v = (+m[1] * 60 + +m[2] - n + 1440) % 1440; return ('0' + Math.floor(v / 60)).slice(-2) + ':' + ('0' + v % 60).slice(-2); }
   function postPage(j){
     var T = j.trips || [];
-    if (!T.length){ body('<h1>負責人發文</h1><div class="note warn" style="margin-top:14px">接下來 30 天內沒有找到你的禮車車趟。\n如果你這趟是負責人，請聯絡好好禮車確認派車資料裡的司機姓名或電話。</div>'); return; }
+    if (!T.length){ body('<h1>負責人發文</h1><div class="note warn" style="margin-top:14px">接下來 30 天內沒有找到你的禮車車趟。\n如果你這趟是負責人，請聯絡派車人員確認派車資料裡的司機姓名或電話。</div>'); return; }
     body('<h1>負責人發文</h1><p class="sub">電話跟新人核對完，確認下面資料後按「預覽發文」。</p>' +
       '<form id="pf" onsubmit="return false"><div class="field" id="tripF"' + (T.length > 1 ? '' : ' hidden') + '><label>車趟</label><select id="trip"></select></div>' +
       '<div id="notLead" class="note warn" hidden></div>' +
