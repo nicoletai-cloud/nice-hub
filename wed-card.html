@@ -648,7 +648,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   /* ---------- 負責人發文 ---------- */
   var WD = ['日', '一', '二', '三', '四', '五', '六'];
   function md(ds){ var p = String(ds).split('-'); var d = new Date(+p[0], +p[1] - 1, +p[2]); return (+p[1]) + '/' + (+p[2]) + '(' + WD[d.getDay()] + ')'; }
-  function ap(t){ var m = String(t || '').match(/^(\d{1,2}):(\d{2})/); if (!m) return ''; var h = +m[1], mm = m[2]; var pre = h < 12 ? '上午' : h === 12 ? '中午' : h < 18 ? '下午' : '晚上'; var hh = h > 12 ? h - 12 : h; return pre + ('0' + hh).slice(-2) + '：' + mm; }
+  function ap(t){ var m = String(t || '').match(/^(\d{1,2}):(\d{2})/); if (!m) return ''; var h = +m[1], mm = m[2]; var pre = h < 12 ? '上午' : h === 12 ? '中午' : h < 18 ? '下午' : '晚上'; var hh = h > 12 ? h - 12 : h; return pre + ' ' + ('0' + hh).slice(-2) + '：' + mm; }
   function minus(t, n){ var m = String(t || '').match(/^(\d{1,2}):(\d{2})/); if (!m) return ''; var v = (+m[1] * 60 + +m[2] - n + 1440) % 1440; return ('0' + Math.floor(v / 60)).slice(-2) + ':' + ('0' + v % 60).slice(-2); }
   function postPage(j){
     var T = j.trips || [];
@@ -656,10 +656,11 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     body('<h1>負責人發文</h1><p class="sub">電話跟新人核對完，確認下面資料後按「預覽發文」。</p>' +
       '<form id="pf" onsubmit="return false"><div class="field" id="tripF"' + (T.length > 1 ? '' : ' hidden') + '><label>車趟</label><select id="trip"></select></div>' +
       '<div id="notLead" class="note warn" hidden></div>' +
+      '<div class="field"><label>已電話聯絡 <small>可複選</small></label><div class="chips" id="callWho"><button type="button" class="chip" aria-pressed="true">新郎</button><button type="button" class="chip" aria-pressed="true">新娘</button><button type="button" class="chip" aria-pressed="false">婚顧</button><button type="button" class="chip" aria-pressed="false">主持人</button><button type="button" class="chip" aria-pressed="false" data-other>其他</button></div><input id="callOther" placeholder="例如：伴郎、新郎媽媽" hidden style="margin-top:8px"></div>' +
       '<div class="field"><label>集合時間</label><div class="row2"><input id="gShow" readonly><button type="button" class="mini" id="gEdit">修改</button></div><div class="row2" id="gBox" hidden><input type="time" id="gTime"></div></div>' +
       '<div class="field"><label>集合地點 <small>有修改可以直接改</small></label><textarea id="meet" rows="2"></textarea></div>' +
-      '<div class="field"><label>補充說明 <small>選填，例如停車位置</small></label><textarea id="meetNote" rows="2" placeholder="例如：車隊停在巷口超商前"></textarea></div>' +
-      '<div class="field"><label>車型與車數</label><div class="carl" id="cars"></div></div>' +
+      '<div class="field"><label>補充說明 <small>選填，例如停車位置、Google 地圖連結</small></label><textarea id="meetNote" rows="3" placeholder="例如：車隊停在巷口超商前"></textarea><button type="button" class="mini" id="mapIns" style="justify-self:start">📍 插入集合地點 Google 地圖連結</button></div>' +
+      '<div class="field"><label>車型與車數 <small>有修改可以直接改，一行一種車</small></label><textarea id="cars" rows="3"></textarea></div>' +
       '<div id="upBox" class="note warn" hidden></div>' +
       '<div class="err" id="perr"></div><button class="go" id="pv">預覽發文</button></form><div id="pvBox" hidden></div>');
     var sel = document.getElementById('trip');
@@ -671,7 +672,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       document.getElementById('gTime').value = gather; document.getElementById('gBox').hidden = true;
       document.getElementById('meet').value = cur.meet + (cur.meet && cur.meetL ? '（' + cur.meetL + '）' : '');
       document.getElementById('meetNote').value = '';
-      document.getElementById('cars').innerHTML = cur.cars.map(function(c){ return '<div>' + esc(c.name) + (c.color ? ' ' + esc(c.color) : '') + '：' + c.n + '台</div>'; }).join('') || '<div>（派車資料還沒有車款）</div>';
+      var ct = document.getElementById('cars'); ct.value = cur.cars.map(function(c){ return c.name + (c.color ? ' ' + c.color : '') + '：' + c.n + ' 台'; }).join('\n'); ct.rows = Math.max(2, cur.cars.length + 1); ct.placeholder = '例如：Tesla Model Y 白色：2 台';
       var nl = document.getElementById('notLead'); nl.hidden = !!cur.lead; nl.textContent = cur.lead ? '' : '這趟的負責人是「' + (cur.leadName || '其他司機') + '」，一般由負責人發文。';
       var ub = document.getElementById('upBox');
       if (cur.ups.length){ ub.hidden = false; ub.innerHTML = '⚠️ 這趟有車輛升等：<br>' + cur.ups.map(function(u){ return esc(u.from) + ' → <b>' + esc(u.to) + '</b>' + (u.color ? ' ' + esc(u.color) : ''); }).join('<br>') +
@@ -680,16 +681,23 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       document.getElementById('pvBox').hidden = true; document.getElementById('pf').hidden = false; document.getElementById('perr').textContent = '';
     }
     sel.onchange = function(){ load(+sel.value); };
+    document.getElementById('callWho').onclick = function(e){ var b = e.target.closest('.chip'); if (!b) return; b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true'); if (b.hasAttribute('data-other')){ var o = document.getElementById('callOther'); o.hidden = b.getAttribute('aria-pressed') !== 'true'; if (!o.hidden) o.focus(); } };
+    function callWho(){ var on = Array.prototype.filter.call(document.querySelectorAll('#callWho .chip'), function(c){ return c.getAttribute('aria-pressed') === 'true'; }).map(function(c){ return c.hasAttribute('data-other') ? document.getElementById('callOther').value.trim() : c.textContent; }).filter(String);
+      var g = on.indexOf('新郎') >= 0, b = on.indexOf('新娘') >= 0, rest = on.filter(function(t){ return t !== '新郎' && t !== '新娘'; });
+      return [g && b ? '新郎新娘' : g ? '新郎' : b ? '新娘' : ''].concat(rest).filter(String).join('、'); }
+    document.getElementById('mapIns').onclick = function(){ var t = document.getElementById('meetNote'), q = (cur.meet || document.getElementById('meet').value || '').replace(/（[^）]*）$/, '').trim(); if (!cur.meetMap && !q) return; var u = cur.meetMap || ('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q)); if (t.value.indexOf(u) < 0) t.value = (t.value.trim() ? t.value.trim() + '\n' : '') + u; t.focus(); };
     document.getElementById('gEdit').onclick = function(){ var b = document.getElementById('gBox'); b.hidden = !b.hidden; if (!b.hidden) document.getElementById('gTime').focus(); };
     document.getElementById('gTime').onchange = function(){ gather = this.value; document.getElementById('gShow').value = md(cur.date) + ap(gather); };
     document.getElementById('pv').onclick = function(){
       var er = document.getElementById('perr'); er.textContent = '';
       if (!/^\d{1,2}:\d{2}$/.test(gather)) { er.textContent = '請設定集合時間'; return; }
       var meet = document.getElementById('meet').value.trim(); if (!meet) { er.textContent = '請填集合地點'; return; }
+      var who = callWho(); if (!who) { er.textContent = '請選擇已電話聯絡的對象'; return; }
+      var carsTxt = document.getElementById('cars').value.split('\n').map(function(l){ return l.trim().replace(/(\d)\s*台/g, '$1 台'); }).filter(String); if (!carsTxt.length) { er.textContent = '請填車型與車數'; return; }
       if (cur.ups.length && !(document.getElementById('upOk') || {}).checked) { er.textContent = '有升等：請先告知新人，並勾選「我已告知新人車輛升等」'; return; }
       var note = document.getElementById('meetNote').value.trim();
-      var txt = ['大家好，已電話聯絡新郎新娘！', '此次禮車：', '集合時間：' + md(cur.date) + ap(gather), '集合地點：', meet].concat(note ? [note] : [])
-        .concat(['車型與車數：']).concat(cur.cars.map(function(c){ return c.name + (c.color ? ' ' + c.color : '') + '：' + c.n + '台'; }))
+      var txt = ['大家好，已電話聯絡' + who + '！', '此次禮車：', '集合時間：' + md(cur.date) + ap(gather), '集合地點：', meet].concat(note ? [note] : [])
+        .concat(['車型與車數：']).concat(carsTxt)
         .concat(['', '請提早 1 小時在群組發訊息「我已出發」，所以是 ' + minus(gather, 60) + ' 前傳「我已經出發」，讓我知道你的動態。',
           '若離客戶家很近，你也要在規定時間內發我已出發，或我已起床，感謝你的相挺與配合，按教案流程，保證不遲到，每一個人都會很放心 。',
           'PS：', '主禮車一定要帶車頭彩手把彩甘蔗架及對講機。', '前一天洗車及充飽電/加滿油，後車廂清空。', '當天穿著正裝：淺色長袖襯衫/深色西裝外套/領帶/深色西裝褲/皮鞋', '',
