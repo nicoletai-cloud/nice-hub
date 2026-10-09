@@ -75,7 +75,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   <form id="f" hidden novalidate>
     <div class="field">
       <label for="name">姓名<small>請填本名（駕照上的全名）</small></label>
-      <input id="name" autocomplete="name" maxlength="20" placeholder="例：王大明" required>
+      <input id="name" autocomplete="name" maxlength="20" placeholder="例：王聰明" required>
       <div class="err" id="e-name"></div>
     </div>
     <div class="field">
@@ -369,7 +369,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     if (bound){
       $('title').textContent = '更新禮車車卡'; $('lead').textContent = '確認或修改下面的資料，改好按送出。';
       $('name').readOnly = true; goLabel = '送出更新'; $('go').textContent = goLabel;
-    } else if (disp && !val('name')) $('name').placeholder = '本名（LINE 名稱：' + disp + '）';
+    }
     renderPhotos();
     $('loading').hidden = true; $('f').hidden = false;
   }).catch(function(err){ fatal(err && err.message ? err.message : '讀取失敗，請關掉後重新開啟'); });

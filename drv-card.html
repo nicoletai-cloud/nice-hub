@@ -72,7 +72,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   <form id="f" hidden novalidate>
     <div class="field">
       <label for="name">姓名<small>請填駕照上的全名</small></label>
-      <input id="name" autocomplete="name" maxlength="20" placeholder="駕照上的全名，例：王大明" required>
+      <input id="name" autocomplete="name" maxlength="20" placeholder="例：王聰明" required>
       <div class="err" id="e-name"></div>
     </div>
     <div class="field">
@@ -217,7 +217,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     var errs = {};
     var phone = val('phone').replace(/[^0-9]/g, '');
     if (!val('name')) errs.name = '請填駕照上的全名';
-    else if (!/^[\u4e00-\u9fa5·．]{2,6}$|^[A-Za-z][A-Za-z.'-]*(\s+[A-Za-z][A-Za-z.'-]*)+$/.test(val('name')) || /^[小阿老][\u4e00-\u9fa5]$/.test(val('name'))) errs.name = '請填駕照上的全名，不要填暱稱（例：王大明）';
+    else if (!/^[\u4e00-\u9fa5·．]{2,6}$|^[A-Za-z][A-Za-z.'-]*(\s+[A-Za-z][A-Za-z.'-]*)+$/.test(val('name')) || /^[小阿老][\u4e00-\u9fa5]$/.test(val('name'))) errs.name = '請填駕照上的全名，不要填暱稱（例：王聰明）';
     if (!/^09\d{8}$/.test(phone)) errs.phone = '請填 10 碼手機號碼（09 開頭）';
     if (val('plate').replace(/[^A-Za-z0-9]/g, '').length < 4) errs.plate = '請填完整車牌';
     if (!brand) errs.brand = '請選廠牌';
@@ -370,8 +370,6 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       showBank();
       $('name').readOnly = true;
       goLabel = '送出更新'; $('go').textContent = goLabel;
-    } else if (disp && !val('name')) {
-      $('name').placeholder = '駕照上的全名（LINE 名稱：' + disp + '）';
     }
     $('loading').hidden = true; $('f').hidden = false;
   }).catch(function(err){ fatal(err && err.message ? err.message : '讀取失敗，請關掉後重新開啟'); });
