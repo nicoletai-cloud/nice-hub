@@ -110,8 +110,8 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       <div class="err" id="e-model"></div>
     </div>
     <div class="field">
-      <label for="year">出廠年份<small>行照上的出廠年月，例：2022</small></label>
-      <input id="year" type="number" inputmode="numeric" min="1990" max="2030" placeholder="例：2022" required>
+      <label for="year">出廠日期<small>請以行照上的出廠日期為主</small></label>
+      <input id="year" type="date" min="1990-01-01" required>
       <div class="err" id="e-year"></div>
     </div>
     <div class="field">
@@ -332,8 +332,8 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     if (!brand) errs.brand = '請選廠牌';
     else if (brand === '其他' && !val('brandOther')) { errs.brand = '請填其他進口車廠牌'; $('brandOther').classList.add('bad'); }
     if (!val('model')) errs.model = modelPick === '其他' || !(MODEL_OPTS[brand] || []).length ? '請填車款' : '請選車款';
-    var yr = +val('year'), ny = new Date().getFullYear();
-    if (!(yr >= 1990 && yr <= ny + 1)) errs.year = '請填 4 位數出廠年份（例：2022）';
+    var yv = val('year'), yr = +yv.slice(0, 4), ny = new Date().getFullYear();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(yv) || yr < 1990 || yr > ny + 1) errs.year = '請照行照填出廠日期';
     if (!/^([2-9]|1[0-9])$/.test(val('seats'))) errs.seats = '請填 2～19 的數字';
     if (!val('color')) errs.color = '請填車色';
     if (!val('emName')) errs.emName = '請填緊急聯絡人稱呼';
