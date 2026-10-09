@@ -242,6 +242,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
 </div>
 <script>
 (function(){
+  if (/[?&]p=(lesson|post)\b|p%3D(lesson|post)\b/i.test(location.search)) return; // 教案／負責人發文：交給下面另一段
   var BOT = 'https://script.google.com/macros/s/AKfycbwoKk13j5YOtkA5cTh3FtvECekYm0uMBPsid1H--kB7bhUVpDFvSnSA0iTzCfc8IT11_Q/exec';
   var LIFF_ID = '2011949076-1fqUEtE2';
   var $ = function(id){ return document.getElementById(id); };
@@ -549,5 +550,168 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   }).catch(function(err){ fatal(err && err.message ? err.message : '讀取失敗，請關掉後重新開啟'); });
 })();
 </script>
+<script>
+/* ===== 禮車司機教案（?p=lesson）／負責人發文（?p=post）：只有填過車卡的司機能開 ===== */
+(function(){
+  var MODE = (function(){ var q = location.search; try { q = decodeURIComponent(q); } catch (e) {} var m = q.match(/[?&]p=(lesson|post)\b/); return m ? m[1] : ''; })();
+  if (!MODE) return;
+  var BOT = 'https://script.google.com/macros/s/AKfycbwoKk13j5YOtkA5cTh3FtvECekYm0uMBPsid1H--kB7bhUVpDFvSnSA0iTzCfc8IT11_Q/exec';
+  var LIFF_ID = '2011949076-1fqUEtE2', idToken = '';
+  function post(body){ body.idToken = idToken; return fetch(BOT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) }).then(function(r){ return r.json(); }); }
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  document.title = MODE === 'lesson' ? '禮車司機教案｜好好禮車' : '負責人發文｜好好禮車';
+  var css = document.createElement('style');
+  css.textContent = '.lx{max-width:640px;margin:0 auto;padding:16px 16px calc(40px + env(safe-area-inset-bottom))}' +
+    '.lx h1{font-size:22px;margin:2px 0}.lx .sub{color:var(--muted);font-size:14px;margin:0 0 12px}' +
+    '.lnav{position:sticky;top:0;z-index:5;background:var(--bg);display:flex;gap:8px;overflow-x:auto;padding:8px 0;margin:0 -16px 6px;padding-left:16px;padding-right:16px;scrollbar-width:none}' +
+    '.lnav::-webkit-scrollbar{display:none}.lnav .chip{white-space:nowrap;flex:none}' +
+    '#ldoc{background:#fff;color:#222;border-radius:12px;padding:14px 14px 4px;border:1px solid var(--line)}' +
+    '.wm{position:fixed;inset:0;pointer-events:none;z-index:50;background-repeat:repeat}' +
+    '.lread{margin-top:18px;text-align:center}.lread .note{margin-bottom:10px}' +
+    '.prev{white-space:pre-wrap;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;font-size:15px;line-height:1.7}' +
+    '.row2{display:flex;gap:8px;align-items:center}.row2 input{flex:1}.mini{font:inherit;font-size:15px;border:1px solid var(--accent);color:var(--accent);background:transparent;border-radius:10px;padding:8px 12px;min-height:44px;cursor:pointer;white-space:nowrap}' +
+    '.carl{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px}.carl div{padding:3px 0}' +
+    '.lx select{font:inherit;font-size:16px;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-height:48px;width:100%}';
+  document.head.appendChild(css);
+  var root = document.createElement('div'); root.className = 'lx';
+  root.innerHTML = '<div class="brand">好好禮車 NICE WEDDING CAR</div><div id="lbody"><div class="state">讀取中…</div></div>';
+  function show(){ Array.prototype.forEach.call(document.body.children, function(e){ if (e.tagName !== 'SCRIPT' && e !== root) e.hidden = true; }); if (!root.parentNode) document.body.appendChild(root); }
+  function body(h){ show(); document.getElementById('lbody').innerHTML = h; }
+  function fail(msg){ body('<div class="note warn" style="margin-top:20px">' + esc(msg) + '</div>'); }
+  function needCard(){ body('<h1>' + (MODE === 'lesson' ? '禮車司機教案' : '負責人發文') + '</h1><div class="note warn" style="margin-top:14px">這個頁面只開放給好好禮車的合作司機。\n請先填寫禮車車卡完成綁定，再回來開啟。</div>' +
+    '<button class="go" id="toCard" style="margin-top:16px">📝 填寫禮車車卡</button>');
+    document.getElementById('toCard').onclick = function(){ location.href = 'https://liff.line.me/' + LIFF_ID; }; }
+  function copyText(t){
+    if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(t).catch(function(){ return legacy(t); });
+    return Promise.resolve(legacy(t));
+    function legacy(t){ var a = document.createElement('textarea'); a.value = t; a.setAttribute('readonly', ''); a.style.cssText = 'position:fixed;top:0;left:0;opacity:0'; document.body.appendChild(a); a.select(); window.__lxCopy = true; var ok = false; try { ok = document.execCommand('copy'); } catch (e) {} window.__lxCopy = false; a.remove(); if (!ok) throw new Error('copy'); }
+  }
+  function flash(btn, txt){ var o = btn.textContent; btn.textContent = txt; btn.disabled = true; setTimeout(function(){ btn.textContent = o; btn.disabled = false; }, 2000); }
+
+  /* ---------- 教案 ---------- */
+  function lesson(j){
+    var d = new Date(j.ver), vtxt = (d.getMonth() + 1) + '/' + d.getDate();
+    body('<h1>禮車司機教案</h1><p class="sub">最後更新 ' + vtxt + '・內容會持續更新，每次任務前請再讀一次</p><nav class="lnav" id="lnav"></nav><div id="ldoc"></div><div class="lread" id="lread"></div>');
+    var host = document.getElementById('ldoc'), sh = host.attachShadow ? host.attachShadow({ mode: 'closed' }) : host;
+    sh.innerHTML = j.html + '<style>:host{display:block;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}' +
+      '*{max-width:100%!important;box-sizing:border-box}img{height:auto!important;max-width:280px!important;width:auto!important}span:has(>img){width:auto!important;height:auto!important}' +
+      'p,li{line-height:1.65!important}h1{font-size:20px!important;margin:22px 0 6px!important;padding-top:10px!important;border-top:2px solid #c9a46b}h1:first-of-type{border-top:0;margin-top:0!important;padding-top:0!important}h2{font-size:17px!important}' +
+      'table{width:100%!important;border-collapse:collapse!important;margin:8px 0!important}td{background:#fffbea!important;padding:10px!important}' +
+      '.cpy{display:block;width:100%;font:inherit;font-size:16px;font-weight:700;color:#fff;background:#2f7d4f;border:0;border-radius:10px;min-height:46px;margin:6px 0 4px;cursor:pointer}</style>';
+    // 只有一格的表格 = 發文模板：加「複製」按鈕
+    Array.prototype.forEach.call(sh.querySelectorAll('table'), function(t){
+      var cells = t.querySelectorAll('td'); if (cells.length !== 1) return;
+      var txt = Array.prototype.map.call(cells[0].querySelectorAll('p'), function(p){ return p.textContent.replace(/ /g, ' ').replace(/\s+$/, ''); }).join('\n').trim() || cells[0].textContent.trim();
+      var b = document.createElement('button'); b.className = 'cpy'; b.textContent = '📋 複製發文模板';
+      b.onclick = function(){ copyText(txt).then(function(){ flash(b, '✅ 已複製，到群組貼上'); }, function(){ flash(b, '複製失敗，請再試一次'); }); };
+      t.parentNode.insertBefore(b, t.nextSibling);
+      var g = document.createElement('button'); g.className = 'cpy'; g.style.background = '#8a6d43'; g.textContent = '✍️ 用發文工具自動帶入這趟資料';
+      g.onclick = function(){ location.href = 'https://liff.line.me/' + LIFF_ID + '?p=post'; };
+      b.parentNode.insertBefore(g, b.nextSibling);
+    });
+    var nav = document.getElementById('lnav');
+    Array.prototype.forEach.call(sh.querySelectorAll('h1'), function(h){
+      var t = h.textContent.trim(); if (!t) return;
+      var c = document.createElement('button'); c.className = 'chip'; c.textContent = t;
+      c.onclick = function(){ var y = h.getBoundingClientRect().top + window.scrollY - nav.offsetHeight - 6; window.scrollTo({ top: y, behavior: 'smooth' }); };
+      nav.appendChild(c);
+    });
+    // 浮水印：姓名＋電話末三碼＋今天日期
+    var now = new Date(), wm = (j.who.name || '') + ' ' + (j.who.ph ? '***' + j.who.ph : '') + ' ' + (now.getMonth() + 1) + '/' + now.getDate();
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="260" height="170"><text x="10" y="110" transform="rotate(-24 130 85)" font-size="17" font-family="sans-serif" fill="rgba(120,120,120,0.16)">' + esc(wm) + '</text></svg>';
+    var w = document.createElement('div'); w.className = 'wm'; w.style.backgroundImage = 'url("data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg) + '")'; document.body.appendChild(w);
+    readBox(j);
+  }
+  function fmt(t){ var d = new Date(t); return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+  function readBox(j){
+    var el = document.getElementById('lread'), r = j.read;
+    if (r && r.ver === j.ver){ el.innerHTML = '<div class="note ok">✅ 你已在 ' + fmt(r.at) + ' 讀完這個版本，謝謝！</div>'; return; }
+    el.innerHTML = (r ? '<div class="note warn">教案在你上次讀過之後有更新，請再看一次。</div>' : '') + '<button class="go" id="iread">✅ 我已詳讀完畢</button>';
+    document.getElementById('iread').onclick = function(){
+      var b = this; b.disabled = true; b.textContent = '記錄中…';
+      post({ action: 'wedLiff', op: 'lessonRead', ver: j.ver }).then(function(x){ if (!x || !x.ok) throw new Error((x && x.error) || ''); j.read = { ver: j.ver, at: x.at }; readBox(j); })
+        .catch(function(){ b.disabled = false; b.textContent = '✅ 我已詳讀完畢'; alert('記錄失敗，請再按一次'); });
+    };
+  }
+  // 教案內容：不給長按選取、複製、另存（發文模板用按鈕複製）
+  document.addEventListener('contextmenu', function(e){ if (MODE === 'lesson') e.preventDefault(); });
+  document.addEventListener('copy', function(e){ if (MODE === 'lesson' && !window.__lxCopy) e.preventDefault(); });
+  document.addEventListener('dragstart', function(e){ if (MODE === 'lesson') e.preventDefault(); });
+
+  /* ---------- 負責人發文 ---------- */
+  var WD = ['日', '一', '二', '三', '四', '五', '六'];
+  function md(ds){ var p = String(ds).split('-'); var d = new Date(+p[0], +p[1] - 1, +p[2]); return (+p[1]) + '/' + (+p[2]) + '(' + WD[d.getDay()] + ')'; }
+  function ap(t){ var m = String(t || '').match(/^(\d{1,2}):(\d{2})/); if (!m) return ''; var h = +m[1], mm = m[2]; var pre = h < 12 ? '上午' : h === 12 ? '中午' : h < 18 ? '下午' : '晚上'; var hh = h > 12 ? h - 12 : h; return pre + ('0' + hh).slice(-2) + '：' + mm; }
+  function minus(t, n){ var m = String(t || '').match(/^(\d{1,2}):(\d{2})/); if (!m) return ''; var v = (+m[1] * 60 + +m[2] - n + 1440) % 1440; return ('0' + Math.floor(v / 60)).slice(-2) + ':' + ('0' + v % 60).slice(-2); }
+  function postPage(j){
+    var T = j.trips || [];
+    if (!T.length){ body('<h1>負責人發文</h1><div class="note warn" style="margin-top:14px">接下來 30 天內沒有找到你的禮車車趟。\n如果你這趟是負責人，請聯絡好好禮車確認派車資料裡的司機姓名或電話。</div>'); return; }
+    body('<h1>負責人發文</h1><p class="sub">電話跟新人核對完，確認下面資料後按「預覽發文」。</p>' +
+      '<form id="pf" onsubmit="return false"><div class="field" id="tripF"' + (T.length > 1 ? '' : ' hidden') + '><label>車趟</label><select id="trip"></select></div>' +
+      '<div id="notLead" class="note warn" hidden></div>' +
+      '<div class="field"><label>集合時間</label><div class="row2"><input id="gShow" readonly><button type="button" class="mini" id="gEdit">修改</button></div><div class="row2" id="gBox" hidden><input type="time" id="gTime"></div></div>' +
+      '<div class="field"><label>集合地點 <small>有修改可以直接改</small></label><textarea id="meet" rows="2"></textarea></div>' +
+      '<div class="field"><label>補充說明 <small>選填，例如停車位置</small></label><textarea id="meetNote" rows="2" placeholder="例如：車隊停在巷口超商前"></textarea></div>' +
+      '<div class="field"><label>車型與車數</label><div class="carl" id="cars"></div></div>' +
+      '<div id="upBox" class="note warn" hidden></div>' +
+      '<div class="err" id="perr"></div><button class="go" id="pv">預覽發文</button></form><div id="pvBox" hidden></div>');
+    var sel = document.getElementById('trip');
+    T.forEach(function(t, i){ var o = document.createElement('option'); o.value = i; o.textContent = md(t.date) + ' ' + t.name + (t.code ? '（' + t.code + '）' : '') + (t.lead ? '' : '｜你不是負責人'); sel.appendChild(o); });
+    var cur = null, gather = '';
+    function load(i){
+      cur = T[i]; gather = cur.gather || '';
+      document.getElementById('gShow').value = (md(cur.date) + ap(gather)) || '未設定，請按修改';
+      document.getElementById('gTime').value = gather; document.getElementById('gBox').hidden = true;
+      document.getElementById('meet').value = cur.meet + (cur.meet && cur.meetL ? '（' + cur.meetL + '）' : '');
+      document.getElementById('meetNote').value = '';
+      document.getElementById('cars').innerHTML = cur.cars.map(function(c){ return '<div>' + esc(c.name) + (c.color ? ' ' + esc(c.color) : '') + '：' + c.n + '台</div>'; }).join('') || '<div>（派車資料還沒有車款）</div>';
+      var nl = document.getElementById('notLead'); nl.hidden = !!cur.lead; nl.textContent = cur.lead ? '' : '這趟的負責人是「' + (cur.leadName || '其他司機') + '」，一般由負責人發文。';
+      var ub = document.getElementById('upBox');
+      if (cur.ups.length){ ub.hidden = false; ub.innerHTML = '⚠️ 這趟有車輛升等：<br>' + cur.ups.map(function(u){ return esc(u.from) + ' → <b>' + esc(u.to) + '</b>' + (u.color ? ' ' + esc(u.color) : ''); }).join('<br>') +
+        '<br>電話核對時請告知新人車輛升等。<label class="ck" style="margin-top:8px"><input type="checkbox" id="upOk"> 我已告知新人車輛升等</label>'; }
+      else { ub.hidden = true; ub.innerHTML = ''; }
+      document.getElementById('pvBox').hidden = true; document.getElementById('pf').hidden = false; document.getElementById('perr').textContent = '';
+    }
+    sel.onchange = function(){ load(+sel.value); };
+    document.getElementById('gEdit').onclick = function(){ var b = document.getElementById('gBox'); b.hidden = !b.hidden; if (!b.hidden) document.getElementById('gTime').focus(); };
+    document.getElementById('gTime').onchange = function(){ gather = this.value; document.getElementById('gShow').value = md(cur.date) + ap(gather); };
+    document.getElementById('pv').onclick = function(){
+      var er = document.getElementById('perr'); er.textContent = '';
+      if (!/^\d{1,2}:\d{2}$/.test(gather)) { er.textContent = '請設定集合時間'; return; }
+      var meet = document.getElementById('meet').value.trim(); if (!meet) { er.textContent = '請填集合地點'; return; }
+      if (cur.ups.length && !(document.getElementById('upOk') || {}).checked) { er.textContent = '有升等：請先告知新人，並勾選「我已告知新人車輛升等」'; return; }
+      var note = document.getElementById('meetNote').value.trim();
+      var txt = ['大家好，已電話聯絡新郎新娘！', '此次禮車：', '集合時間：' + md(cur.date) + ap(gather), '集合地點：', meet].concat(note ? [note] : [])
+        .concat(['車型與車數：']).concat(cur.cars.map(function(c){ return c.name + (c.color ? ' ' + c.color : '') + '：' + c.n + '台'; }))
+        .concat(['', '請提早 1 小時在群組發訊息「我已出發」，所以是 ' + minus(gather, 60) + ' 前傳「我已經出發」，讓我知道你的動態。',
+          '若離客戶家很近，你也要在規定時間內發我已出發，或我已起床，感謝你的相挺與配合，按教案流程，保證不遲到，每一個人都會很放心 。',
+          'PS：', '主禮車一定要帶車頭彩手把彩甘蔗架及對講機。', '前一天洗車及充飽電/加滿油，後車廂清空。', '當天穿著正裝：淺色長袖襯衫/深色西裝外套/領帶/深色西裝褲/皮鞋', '',
+          '🟨各司機確認後請回覆：「收到」，謝謝！']).join('\n');
+      document.getElementById('pf').hidden = true;
+      var box = document.getElementById('pvBox'); box.hidden = false;
+      box.innerHTML = '<div class="sec" style="border:0;padding:0;margin:4px 0 10px">預覽</div><div class="prev"><span style="color:var(--accent);font-weight:700">@All</span>\n' + esc(txt) + '</div>' +
+        '<div class="note ok" style="margin-top:12px">貼到群組的方法：\n1. 在群組輸入框先打「@」，選「All」\n2. 再長按輸入框貼上</div>' +
+        '<button class="go" id="cp">📋 複製發文</button><button class="go ghost" id="back">返回修改</button>';
+      document.getElementById('back').onclick = function(){ box.hidden = true; document.getElementById('pf').hidden = false; window.scrollTo(0, 0); };
+      document.getElementById('cp').onclick = function(){ var b = this; copyText(txt).then(function(){ flash(b, '✅ 已複製，到群組貼上'); post({ action: 'wedLiff', op: 'postDone', id: cur.id, label: md(cur.date) + ' ' + cur.name + (cur.code ? '（' + cur.code + '）' : '') }).catch(function(){}); }, function(){ flash(b, '複製失敗，請再試一次'); }); };
+      window.scrollTo(0, 0);
+    };
+    load(0);
+  }
+
+  liff.init({ liffId: LIFF_ID }).then(function(){
+    if (/[?&]liff\.state=/.test(location.search)) return null;
+    if (!liff.isLoggedIn()){ liff.login({ redirectUri: location.href }); return null; }
+    idToken = liff.getIDToken() || '';
+    return post({ action: 'wedLiff', op: MODE });
+  }).then(function(j){
+    if (j === null) return;
+    if (!j || !j.ok) throw new Error((j && j.error) || '讀取失敗，請關掉後重新開啟');
+    if (!j.bound) return needCard();
+    if (MODE === 'lesson') lesson(j); else postPage(j);
+  }).catch(function(e){ fail(e && e.message ? e.message : '讀取失敗，請關掉後重新開啟'); });
+})();
+</script>
+
 </body>
 </html>
