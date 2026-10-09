@@ -127,23 +127,6 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       <input id="emRel" maxlength="10" placeholder="點上面選，或自己填" required>
       <div class="err" id="e-emRel"></div>
     </div>
-    <div class="sec">經驗與配備<small>選填，有填比較容易媒合到適合的案子</small></div>
-    <div class="field">
-      <label for="wexp">禮車經驗<small>簡述經驗或次數（前導車／主禮車／伴娘車）</small></label>
-      <textarea id="wexp" maxlength="300" placeholder="例：主禮車約 20 次、前導車 5 次"></textarea>
-    </div>
-    <div class="field">
-      <label>相關經驗或專長<small>可複選</small></label>
-      <div class="chips" data-pick="skills" data-multi="1" data-opts="攝影（會操作單眼／手機構圖好）|影片剪輯（IG／YouTube／婚禮精華）|熟悉婚禮流程（迎娶、送客、禮俗）|曾參與婚禮工作（婚顧、婚攝、新秘等）|從事服務業（飯店、空服、銷售、導覽等）|高級駕駛技巧（受過訓練或跑過賽道）|熟悉車輛保養與清潔|擅長溝通與客戶應對"></div>
-    </div>
-    <div class="field">
-      <label>備有工具<small>可複選</small></label>
-      <div class="chips" data-pick="tools" data-multi="1" data-opts="車頭彩|門把彩|甘蔗固定器"></div>
-    </div>
-    <div class="field">
-      <label>對講機數量</label>
-      <div class="chips" data-pick="radios" data-opts="0|1|2|3|4|5|6"></div>
-    </div>
     <div class="sec">車輛資料<small>有兩台以上的車，可以按「增加支援車輛」一台一台加</small></div>
     <div class="chips" id="carPick" hidden></div>
     <div class="field">
@@ -222,6 +205,23 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     <div id="insBox"></div>
     <div class="err" id="e-ins"></div>
     <button type="button" class="go ghost" id="carDel" hidden>刪除這台車</button>
+    <div class="sec">經驗與配備<small>選填，有填比較容易媒合到適合的案子</small></div>
+    <div class="field">
+      <label for="wexp">禮車經驗<small>簡述經驗或次數（前導車／主禮車／伴娘車）</small></label>
+      <textarea id="wexp" maxlength="300" placeholder="例：主禮車約 20 次、前導車 5 次"></textarea>
+    </div>
+    <div class="field">
+      <label>相關經驗或專長<small>可複選</small></label>
+      <div class="chips" data-pick="skills" data-multi="1" data-opts="攝影（會操作單眼／手機構圖好）|影片剪輯（IG／YouTube／婚禮精華）|熟悉婚禮流程（迎娶、送客、禮俗）|曾參與婚禮工作（婚顧、婚攝、新秘等）|從事服務業（飯店、空服、銷售、導覽等）|高級駕駛技巧（受過訓練或跑過賽道）|熟悉車輛保養與清潔|擅長溝通與客戶應對"></div>
+    </div>
+    <div class="field">
+      <label>備有工具<small>可複選</small></label>
+      <div class="chips" data-pick="tools" data-multi="1" data-opts="車頭彩|門把彩|甘蔗固定器"></div>
+    </div>
+    <div class="field">
+      <label>對講機數量</label>
+      <div class="chips" data-pick="radios" data-opts="0|1|2|3|4|5|6"></div>
+    </div>
     <div class="note warn" id="srvErr" hidden></div>
     <button type="submit" class="go" id="go">送出車卡</button>
     <p class="tnote">資料只用在禮車派車安排，不會公開。</p>
