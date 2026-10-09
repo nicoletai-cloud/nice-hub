@@ -607,17 +607,13 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       var b = document.createElement('button'); b.className = 'cpy'; b.textContent = '📋 複製發文模板';
       b.onclick = function(){ copyText(txt).then(function(){ flash(b, '✅ 已複製，到群組貼上'); }, function(){ flash(b, '複製失敗，請再試一次'); }); };
       t.parentNode.insertBefore(b, t.nextSibling);
-      var g = document.createElement('button'); g.className = 'cpy'; g.style.background = '#8a6d43'; g.textContent = '✍️ 用發文工具自動帶入這趟資料';
-      g.onclick = function(){ location.href = 'https://liff.line.me/' + LIFF_ID + '?p=post'; };
-      b.parentNode.insertBefore(g, b.nextSibling);
+
     });
     // 每個「標題 1」一頁：上方按鈕切換（像原本協作平台的選單），下方可以按「下一頁」
-    // 文件裡寫「【發文工具】」的那一行 → 換成發文工具按鈕
+    // 文件裡寫「【發文工具】」的那一行不顯示（發文工具統一從圖文選單進入）
     Array.prototype.forEach.call(sh.querySelectorAll('p'), function(p){
       if (p.textContent.replace(/\s/g, '') !== '【發文工具】') return;
-      var g = document.createElement('button'); g.className = 'cpy'; g.style.background = '#8a6d43'; g.textContent = '✍️ 打開發文工具（自動帶入這趟資料）';
-      g.onclick = function(){ location.href = 'https://liff.line.me/' + LIFF_ID + '?p=post'; };
-      p.parentNode.replaceChild(g, p);
+      p.parentNode.removeChild(p);
     });
     var nav = document.getElementById('lnav'), wrapEl = sh.querySelector('.doc-content') || sh, pages = [], cur = null;
     var kids = Array.prototype.slice.call((sh.querySelector('h1') || {}).parentNode ? sh.querySelector('h1').parentNode.childNodes : []);
@@ -658,11 +654,28 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   function md(ds){ var p = String(ds).split('-'); var d = new Date(+p[0], +p[1] - 1, +p[2]); return (+p[1]) + '/' + (+p[2]) + '(' + WD[d.getDay()] + ')'; }
   function ap(t){ var m = String(t || '').match(/^(\d{1,2}):(\d{2})/); if (!m) return ''; var h = +m[1], mm = m[2]; var pre = h < 12 ? '上午' : h === 12 ? '中午' : h < 18 ? '下午' : '晚上'; var hh = h > 12 ? h - 12 : h; return pre + ' ' + ('0' + hh).slice(-2) + '：' + mm; }
   function minus(t, n){ var m = String(t || '').match(/^(\d{1,2}):(\d{2})/); if (!m) return ''; var v = (+m[1] * 60 + +m[2] - n + 1440) % 1440; return ('0' + Math.floor(v / 60)).slice(-2) + ':' + ('0' + v % 60).slice(-2); }
+  // 有好幾場時先選「聯絡的是哪一場」，再進該場的發文頁
   function postPage(j){
     var T = j.trips || [];
-    if (!T.length){ body('<h1>負責人發文</h1><div class="note warn" style="margin-top:14px">接下來 30 天內沒有找到你的禮車車趟。\n如果你這趟是負責人，請聯絡派車人員確認派車資料裡的司機姓名或電話。</div>'); return; }
-    body('<h1>負責人發文</h1><p class="sub">電話跟新人核對完，確認下面資料後按「預覽發文」。</p>' +
-      '<form id="pf" onsubmit="return false"><div class="field" id="tripF"' + (T.length > 1 ? '' : ' hidden') + '><label>車趟</label><select id="trip"></select></div>' +
+    if (!T.length){ body('<h1>負責人發文</h1><div class="note warn" style="margin-top:14px">目前沒有已公布的車趟。\n派車單在群組發佈後，這裡才會出現；如果已經發佈還是看不到，請聯絡派車人員確認。</div>'); return; }
+    if (T.length === 1) return postForm([T[0]], null);
+    body('<h1>我已聯絡新人</h1><p class="sub">請選擇你剛剛電話聯絡的是哪一場：</p><div id="tripPick" style="display:grid;gap:10px;margin-top:8px"></div>');
+    var box = document.getElementById('tripPick');
+    T.forEach(function(t){
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'tpick';
+      b.style.cssText = 'font:inherit;text-align:left;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:14px 16px;cursor:pointer;display:grid;gap:2px';
+      b.innerHTML = '<b style="font-size:18px">' + esc(md(t.date)) + (t.gather ? ' ' + esc(ap(t.gather)) + ' 集合' : '') + '</b>' +
+        '<span>' + esc(t.name) + (t.code ? '（' + esc(t.code) + '）' : '') + '</span>' +
+        '<span style="color:var(--muted);font-size:14px">' + esc(t.meet || '集合地點未填') + '</span>' +
+        (t.lead ? '' : '<span style="color:var(--warn);font-size:14px">這趟的負責人是' + esc(t.leadName || '其他司機') + '</span>');
+      b.onclick = function(){ postForm([t], j); window.scrollTo(0, 0); };
+      box.appendChild(b);
+    });
+  }
+  function postForm(T, back){
+    body('<h1>負責人發文</h1>' + (back ? '<button type="button" class="mini" id="backPick" style="margin:2px 0 8px">‹ 換一場</button>' : '') + '<p class="sub">電話跟新人核對完，確認下面資料後按「預覽發文」。</p>' +
+      '<div id="pick" hidden><div class="sec" style="border:0;padding:0;margin:4px 0 10px">請選擇你聯絡的是哪一場</div><div id="pickList" style="display:grid;gap:10px"></div></div>' +
+      '<form id="pf" onsubmit="return false"><div class="field" id="tripF" hidden><label>車趟</label><select id="trip"></select></div><div id="tripHead" class="note ok" style="display:flex;justify-content:space-between;align-items:center;gap:8px" hidden><b id="tripName"></b><button type="button" class="mini" id="tripBack">換一場</button></div>' +
       '<div id="notLead" class="note warn" hidden></div>' +
       '<div class="field"><label>已電話聯絡 <small>可複選</small></label><div class="chips" id="callWho"><button type="button" class="chip" aria-pressed="true">新郎</button><button type="button" class="chip" aria-pressed="true">新娘</button><button type="button" class="chip" aria-pressed="false">婚顧</button><button type="button" class="chip" aria-pressed="false">主持人</button><button type="button" class="chip" aria-pressed="false" data-other>其他</button></div><input id="callOther" placeholder="例如：伴郎、新郎媽媽" hidden style="margin-top:8px"></div>' +
       '<div class="field"><label>集合時間</label><div class="row2"><input id="gShow" readonly><button type="button" class="mini" id="gEdit">修改</button></div><div class="row2" id="gBox" hidden><input type="time" id="gTime"></div></div>' +
@@ -689,6 +702,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       document.getElementById('pvBox').hidden = true; document.getElementById('pf').hidden = false; document.getElementById('perr').textContent = '';
     }
     sel.onchange = function(){ load(+sel.value); };
+    if (back) document.getElementById('backPick').onclick = function(){ postPage(back); window.scrollTo(0, 0); };
     document.getElementById('callWho').onclick = function(e){ var b = e.target.closest('.chip'); if (!b) return; b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true'); if (b.hasAttribute('data-other')){ var o = document.getElementById('callOther'); o.hidden = b.getAttribute('aria-pressed') !== 'true'; if (!o.hidden) o.focus(); } };
     function callWho(){ var on = Array.prototype.filter.call(document.querySelectorAll('#callWho .chip'), function(c){ return c.getAttribute('aria-pressed') === 'true'; }).map(function(c){ return c.hasAttribute('data-other') ? document.getElementById('callOther').value.trim() : c.textContent; }).filter(String);
       var g = on.indexOf('新郎') >= 0, b = on.indexOf('新娘') >= 0, rest = on.filter(function(t){ return t !== '新郎' && t !== '新娘'; });
@@ -719,7 +733,12 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       document.getElementById('cp').onclick = function(){ var b = this; copyText(txt).then(function(){ flash(b, '✅ 已複製，到群組貼上'); post({ action: 'wedLiff', op: 'postDone', id: cur.id, label: md(cur.date) + ' ' + cur.name + (cur.code ? '（' + cur.code + '）' : '') }).catch(function(){}); }, function(){ flash(b, '複製失敗，請再試一次'); }); };
       window.scrollTo(0, 0);
     };
-    load(0);
+    function pickShow(){ document.getElementById('pf').hidden = true; document.getElementById('pvBox').hidden = true; document.getElementById('pick').hidden = false; window.scrollTo(0, 0); }
+    function pickGo(i){ sel.value = i; load(i); document.getElementById('pick').hidden = true; document.getElementById('pf').hidden = false; var h = document.getElementById('tripHead'); h.hidden = T.length < 2; document.getElementById('tripName').textContent = sel.options[i].textContent; window.scrollTo(0, 0); }
+    document.getElementById('tripBack').onclick = pickShow;
+    var pl = document.getElementById('pickList');
+    T.forEach(function(t, i){ var b = document.createElement('button'); b.type = 'button'; b.className = 'go ghost'; b.style.cssText = 'margin:0;text-align:left;padding:12px 16px;line-height:1.5'; b.innerHTML = '<div>' + esc(md(t.date) + ' ' + ap(t.gather || '')) + '</div><div style="font-size:16px">' + esc(t.name) + (t.code ? '（' + esc(t.code) + '）' : '') + '</div>' + (t.lead ? '' : '<div style="font-size:13px;font-weight:400">負責人：' + esc(t.leadName || '其他司機') + '</div>'); b.onclick = function(){ pickGo(i); }; pl.appendChild(b); });
+    if (T.length > 1) { load(0); pickShow(); } else pickGo(0);
   }
 
   liff.init({ liffId: LIFF_ID }).then(function(){

@@ -136,6 +136,8 @@ button.go:disabled{opacity:.6}
   var pick = {}, route = [], later = false;
   var Q = new URLSearchParams(location.search), no = (Q.get('no') || Q.get('entry.1571552052') || '').trim();
   if (no){ $('no').value = no; $('no').readOnly = true; }
+  var PREVIEW = Q.get('preview') === '1';
+  if (PREVIEW){ var bn = document.createElement('div'); bn.textContent = '預覽模式：按送出不會真的送出資料'; bn.style.cssText = 'background:#fbeee6;color:#b4532a;border-radius:10px;padding:10px 14px;margin:10px 0;font-size:15px'; document.querySelector('.wrap').insertBefore(bn, $('f')); }
 
   // 單選按鈕群組（含「其他」自行填寫）
   Array.prototype.forEach.call(document.querySelectorAll('[data-pick]'), function(g){
@@ -193,6 +195,7 @@ button.go:disabled{opacity:.6}
       start: $('start').value, end: $('end').value, meet: $('meet').value.trim(), wed: $('wed').value.trim(),
       o1: $('o1').value.trim(), o1L: val('o1L'), o2: $('o2').value.trim(), o2L: val('o2L'),
       route: later ? '行前一週確認' : route.join(' > '), note: $('note').value.trim(), cane: pick.cane, deco: pick.deco };
+    if (PREVIEW){ $('f').hidden = true; $('done').hidden = false; $('done').querySelector('p').textContent = '（預覽模式：資料沒有送出）\n\n' + Object.keys(body).filter(function(k){ return k !== 'action' && k !== 'hp' && body[k]; }).map(function(k){ return k + '：' + body[k]; }).join('\n'); window.scrollTo(0, 0); return; }
     var go = $('go'); go.disabled = true; go.textContent = '送出中…';
     fetch(BOT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) })
       .then(function(r){ return r.json(); })
