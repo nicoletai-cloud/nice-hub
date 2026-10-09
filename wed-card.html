@@ -114,14 +114,15 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     <div class="field">
       <label for="seats">座位數<small>含司機</small></label>
       <div class="chips" data-for="seats">
-        <button type="button" class="chip">5</button><button type="button" class="chip">7</button><button type="button" class="chip">9</button>
+        <button type="button" class="chip">5</button><button type="button" class="chip">6</button><button type="button" class="chip">7</button><button type="button" class="chip">9</button>
       </div>
       <input id="seats" type="number" inputmode="numeric" min="2" max="19" placeholder="例：5" required>
       <div class="err" id="e-seats"></div>
     </div>
     <div class="field">
       <label for="color">車色</label>
-      <input id="color" maxlength="10" placeholder="例：白色" required>
+      <div class="chips" data-for="color"><button type="button" class="chip">黑色</button><button type="button" class="chip">白色</button><button type="button" class="chip">紅色</button></div>
+      <input id="color" maxlength="10" placeholder="其他顏色請直接輸入" required>
       <div class="err" id="e-color"></div>
     </div>
     <div class="field">
@@ -136,9 +137,29 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       <input id="modNote" maxlength="60" placeholder="說明改裝項目，例：改輪框、降低車身" hidden>
       <div class="err" id="e-mod"></div>
     </div>
+    <div class="sec">緊急聯絡人<small>只有在禮車出發時間沒有回報、聯絡不到你時才會用到，平時不會聯絡</small></div>
+    <div class="field">
+      <label for="emName">稱呼</label>
+      <input id="emName" maxlength="20" placeholder="例：王太太、陳先生" required>
+      <div class="err" id="e-emName"></div>
+    </div>
+    <div class="field">
+      <label for="emPhone">電話</label>
+      <input id="emPhone" type="tel" inputmode="numeric" maxlength="12" placeholder="09xxxxxxxx" required>
+      <div class="err" id="e-emPhone"></div>
+    </div>
+    <div class="field">
+      <label for="emRel">關係</label>
+      <div class="chips" data-for="emRel"><button type="button" class="chip">配偶</button><button type="button" class="chip">父母</button><button type="button" class="chip">兄弟姊妹</button><button type="button" class="chip">朋友</button></div>
+      <input id="emRel" maxlength="10" placeholder="點上面選，或自己填" required>
+      <div class="err" id="e-emRel"></div>
+    </div>
     <div class="sec">車輛外觀照片<small>1～3 張，拍得到車頭和車牌</small></div>
     <div id="photos"></div>
     <div class="err" id="e-photos"></div>
+    <div class="sec">保險單<small>需包含強制險及任意險，照片或 PDF，最多 5 個檔案</small></div>
+    <div id="insBox"></div>
+    <div class="err" id="e-ins"></div>
     <div class="note warn" id="srvErr" hidden></div>
     <button type="submit" class="go" id="go">送出車卡</button>
     <p class="tnote">資料只給好好禮車派車使用。</p>
@@ -156,8 +177,8 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   var BOT = 'https://script.google.com/macros/s/AKfycbwoKk13j5YOtkA5cTh3FtvECekYm0uMBPsid1H--kB7bhUVpDFvSnSA0iTzCfc8IT11_Q/exec';
   var LIFF_ID = '2011949076-1fqUEtE2';
   var $ = function(id){ return document.getElementById(id); };
-  var idToken = '', disp = '', bound = false, goLabel = '送出車卡', photos = [], busy = false;
-  var FIELDS = ['name','phone','plate','model','seats','color'];
+  var idToken = '', disp = '', bound = false, goLabel = '送出車卡', photos = [], ins = [], busy = false;
+  var FIELDS = ['name','phone','plate','model','seats','color','emName','emPhone','emRel'];
   var ZOD = ['鼠','牛','虎','兔','龍','蛇','馬','羊','猴','雞','狗','豬'], zodiac = '', yn = { wrap: null, mod: null };
 
   function fatal(msg){ $('loading').hidden = true; $('f').hidden = true; $('fatal').hidden = false; $('fatal').textContent = msg; }
@@ -234,9 +255,13 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   function md(t){ var d = new Date(+t); return (d.getMonth() + 1) + '/' + d.getDate(); }
   function renderPhotos(){
     $('photos').innerHTML = photos.map(function(p, i){ return '<div class="ditem"><span class="lb">外觀照片 ' + (i + 1) + '</span><span class="st ok">✓ ' + md(p.at) + '</span><button type="button" class="del" data-del="' + p.id + '">刪除</button></div>'; }).join('') +
-      (photos.length < 3 ? '<div class="ditem"><span class="lb">' + (photos.length ? '再加一張' : '外觀照片') + '</span><span class="st">' + photos.length + ' / 3</span><label class="pick"><input type="file" accept="image/*" data-up="1" hidden>拍照／選照片</label></div>' : '');
+      (photos.length < 3 ? '<div class="ditem"><span class="lb">' + (photos.length ? '再加一張' : '外觀照片') + '</span><span class="st">' + photos.length + ' / 3</span><label class="pick"><input type="file" accept="image/*" data-up="car" hidden>拍照／選照片</label></div>' : '');
     if (photos.length) $('e-photos').textContent = '';
+    $('insBox').innerHTML = ins.map(function(p, i){ return '<div class="ditem"><span class="lb">保險單 ' + (i + 1) + '</span><span class="st ok">✓ ' + md(p.at) + '</span><button type="button" class="del" data-del="' + p.id + '" data-kind="ins">刪除</button></div>'; }).join('') +
+      (ins.length < 5 ? '<div class="ditem"><span class="lb">' + (ins.length ? '再加一個' : '保險單') + '</span><span class="st">' + ins.length + ' / 5</span><label class="pick"><input type="file" accept="image/*,application/pdf" data-up="ins" hidden>拍照／選檔</label></div>' : '');
+    if (ins.length) $('e-ins').textContent = '';
   }
+  function setFiles(j){ photos = j.photos || []; ins = j.ins || []; renderPhotos(); }
   function shrink(file){
     return new Promise(function(res){
       if (!/^image\//.test(file.type) || /heic|heif/i.test(file.type)) return res(file);
@@ -251,20 +276,20 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   function b64(blob){ return new Promise(function(res, rej){ var fr = new FileReader(); fr.onload = function(){ res(String(fr.result).split(',')[1] || ''); }; fr.onerror = rej; fr.readAsDataURL(blob); }); }
   document.addEventListener('change', function(e){
     if (!e.target.getAttribute || !e.target.getAttribute('data-up') || !e.target.files || !e.target.files[0]) return;
-    var file = e.target.files[0]; e.target.value = '';
-    if (busy) return; busy = true; $('e-photos').textContent = '';
+    var file = e.target.files[0], kind = e.target.getAttribute('data-up'), errEl = $(kind === 'ins' ? 'e-ins' : 'e-photos'); e.target.value = '';
+    if (busy) return; busy = true; errEl.textContent = '';
     var lab = e.target.parentNode; lab.lastChild.textContent = '上傳中…';
-    shrink(file).then(function(b){ if (b.size > 9 * 1024 * 1024) throw new Error('照片太大（超過 9MB），請改用相機拍照');
-      var mime = b.type || file.type || 'image/jpeg'; return b64(b).then(function(s){ return post({ action: 'wedLiff', op: 'upload', idToken: idToken, disp: disp, name: val('name'), mime: mime, b64: s }); }); })
-      .then(function(j){ if (!j || !j.ok) throw new Error((j && j.error) || '上傳失敗，請再試一次'); photos = j.photos || []; renderPhotos(); })
-      .catch(function(err){ $('e-photos').textContent = err.message || String(err); lab.lastChild.textContent = '再試一次'; })
+    shrink(file).then(function(b){ if (b.size > 9 * 1024 * 1024) throw new Error('檔案太大（超過 9MB），請改用相機拍照');
+      var mime = b.type || file.type || 'image/jpeg'; return b64(b).then(function(s){ return post({ action: 'wedLiff', op: 'upload', kind: kind, idToken: idToken, disp: disp, name: val('name'), mime: mime, b64: s }); }); })
+      .then(function(j){ if (!j || !j.ok) throw new Error((j && j.error) || '上傳失敗，請再試一次'); setFiles(j); })
+      .catch(function(err){ errEl.textContent = err.message || String(err); lab.lastChild.textContent = '再試一次'; })
       .then(function(){ busy = false; });
   });
   document.addEventListener('click', function(e){
     var b = e.target.closest && e.target.closest('[data-del]'); if (!b || busy) return;
     busy = true; b.textContent = '刪除中…';
-    post({ action: 'wedLiff', op: 'photodel', idToken: idToken, id: b.getAttribute('data-del') })
-      .then(function(j){ if (!j || !j.ok) throw new Error((j && j.error) || '刪除失敗'); photos = j.photos || []; renderPhotos(); })
+    post({ action: 'wedLiff', op: 'photodel', idToken: idToken, id: b.getAttribute('data-del'), kind: b.getAttribute('data-kind') || 'car' })
+      .then(function(j){ if (!j || !j.ok) throw new Error((j && j.error) || '刪除失敗'); setFiles(j); })
       .catch(function(err){ $('e-photos').textContent = err.message || String(err); }).then(function(){ busy = false; });
   });
 
@@ -283,11 +308,17 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     if (!val('model')) errs.model = '請填車款';
     if (!/^([2-9]|1[0-9])$/.test(val('seats'))) errs.seats = '請填 2～19 的數字';
     if (!val('color')) errs.color = '請填車色';
+    if (!val('emName')) errs.emName = '請填緊急聯絡人稱呼';
+    var emp = val('emPhone').replace(/[^0-9]/g, '');
+    if (!/^0\d{8,9}$/.test(emp)) errs.emPhone = '請填緊急聯絡人電話';
+    else if (emp === phone) errs.emPhone = '請填別人的電話，不要填自己的';
+    if (!val('emRel')) errs.emRel = '請選或填關係';
     if (yn.wrap === null) errs.wrap = '請選有沒有包膜'; else if (yn.wrap && !val('wrapNote')) errs.wrap = '請簡單說明包膜內容';
     if (yn.mod === null) errs.mod = '請選有沒有改裝'; else if (yn.mod && !val('modNote')) errs.mod = '請簡單說明改裝內容';
     if (!photos.length) errs.photos = '請至少上傳 1 張車輛外觀照片';
+    if (!ins.length) errs.ins = '請上傳保險單（需包含強制險及任意險）';
     FIELDS.forEach(function(k){ $(k).classList.toggle('bad', !!errs[k]); $('e-' + k).textContent = errs[k] || ''; });
-    ['area','zodiac','brand','wrap','mod','photos'].forEach(function(k){ $('e-' + k).textContent = errs[k] || ''; });
+    ['area','zodiac','brand','wrap','mod','photos','ins'].forEach(function(k){ $('e-' + k).textContent = errs[k] || ''; });
     var first = Object.keys(errs)[0];
     if (first){ var el = FIELDS.indexOf(first) >= 0 ? $(first) : $('e-' + first); if (FIELDS.indexOf(first) >= 0) el.focus(); el.scrollIntoView({ block: 'center' }); }
     return !first;
@@ -295,12 +326,12 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
 
   $('f').addEventListener('submit', function(e){
     e.preventDefault(); $('srvErr').hidden = true;
-    if (busy){ $('srvErr').hidden = false; $('srvErr').textContent = '照片還在上傳，請稍等'; return; }
+    if (busy){ $('srvErr').hidden = false; $('srvErr').textContent = '檔案還在上傳，請稍等'; return; }
     if (!check()) return;
     $('go').disabled = true; $('go').textContent = '送出中…';
     post({ action: 'wedLiff', op: 'save', idToken: idToken, disp: disp,
       card: { name: val('name'), phone: val('phone'), area: areaText(), zodiac: zodiac, plate: val('plate').toUpperCase(), brand: brandText(), model: val('model'), seats: val('seats'), color: val('color'),
-        wrap: yn.wrap, wrapNote: val('wrapNote'), mod: yn.mod, modNote: val('modNote') } })
+        wrap: yn.wrap, wrapNote: val('wrapNote'), mod: yn.mod, modNote: val('modNote'), emName: val('emName'), emPhone: val('emPhone'), emRel: val('emRel') } })
       .then(function(j){
         if (!j || !j.ok) throw new Error((j && j.error) || '送出失敗，請再試一次');
         if (!j.done){ $('srvErr').hidden = false; $('srvErr').textContent = j.msg || '資料有誤，請檢查後再送出'; return; }
@@ -323,10 +354,10 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   }).then(function(j){
     if (j === null) return;
     if (!j || !j.ok) throw new Error((j && j.error) || '讀取失敗，請關掉後重新開啟');
-    bound = !!j.bound; photos = j.photos || [];
+    bound = !!j.bound; photos = j.photos || []; ins = j.ins || [];
     var c = j.card;
     if (c){
-      ['name','phone','plate','model','seats','color'].forEach(function(k){ $(k).value = c[k] || ''; if ($(k)._sync) $(k)._sync(); });
+      ['name','phone','plate','model','seats','color','emName','emPhone','emRel'].forEach(function(k){ $(k).value = c[k] || ''; if ($(k)._sync) $(k)._sync(); });
       areaLoad(c.area);
       if (c.zodiac) setZodiac(c.zodiac);
       if (c.brand){ if (BRANDS.indexOf(c.brand) >= 0) setBrand(c.brand); else { setBrand('其他'); $('brandOther').value = c.brand; } }
