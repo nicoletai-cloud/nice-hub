@@ -54,8 +54,8 @@ button.go:disabled{opacity:.6}
 
   <form id="f" hidden novalidate>
     <div class="field">
-      <label for="name">姓名</label>
-      <input id="name" autocomplete="name" maxlength="20" required>
+      <label for="name">姓名<small>請填駕照上的全名</small></label>
+      <input id="name" autocomplete="name" maxlength="20" placeholder="駕照上的全名，例：王大明" required>
       <div class="err" id="e-name"></div>
     </div>
     <div class="field">
@@ -112,20 +112,6 @@ button.go:disabled{opacity:.6}
       <input id="holder" maxlength="20">
       <div class="err" id="e-holder"></div>
     </div>
-    <div class="sec">緊急聯絡人<small>禮車司機必填</small></div>
-    <div class="field">
-      <label for="emPhone">緊急聯絡電話</label>
-      <input id="emPhone" type="tel" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="例：0912345678">
-      <div class="err" id="e-emPhone"></div>
-    </div>
-    <div class="field">
-      <label for="emRel">對方關係</label>
-      <div class="chips" data-for="emRel">
-        <button type="button" class="chip">配偶</button><button type="button" class="chip">父母</button><button type="button" class="chip">兄弟姊妹</button><button type="button" class="chip">朋友</button>
-      </div>
-      <input id="emRel" maxlength="10" placeholder="點上面選，或自己輸入">
-      <div class="err" id="e-emRel"></div>
-    </div>
     <div class="note warn" id="srvErr" hidden></div>
     <button type="submit" class="go" id="go">送出車卡</button>
   </form>
@@ -142,7 +128,7 @@ button.go:disabled{opacity:.6}
   var BOT = 'https://script.google.com/macros/s/AKfycbwoKk13j5YOtkA5cTh3FtvECekYm0uMBPsid1H--kB7bhUVpDFvSnSA0iTzCfc8IT11_Q/exec';
   var $ = function(id){ return document.getElementById(id); };
   var idToken = '', disp = '', bound = false, goLabel = '送出車卡';
-  var FIELDS = ['name','phone','plate','car','color','seats','bankCode','acct','holder','emPhone','emRel'];
+  var FIELDS = ['name','phone','plate','car','color','seats','bankCode','acct','holder'];
   var BANKS = {'004':'臺灣銀行','005':'土地銀行','006':'合作金庫','007':'第一銀行','008':'華南銀行','009':'彰化銀行','011':'上海商銀','012':'台北富邦','013':'國泰世華','016':'高雄銀行','017':'兆豐銀行','021':'花旗（台灣）','048':'王道銀行','050':'臺灣企銀','052':'渣打銀行','053':'台中銀行','054':'京城銀行','081':'滙豐（台灣）','101':'瑞興銀行','102':'華泰銀行','103':'新光銀行','108':'陽信銀行','118':'板信銀行','147':'三信銀行','700':'中華郵政','803':'聯邦銀行','805':'遠東銀行','806':'元大銀行','807':'永豐銀行','808':'玉山銀行','809':'凱基銀行','810':'星展（台灣）','812':'台新銀行','816':'安泰銀行','822':'中國信託','823':'將來銀行','824':'連線銀行（LINE Bank）','826':'樂天銀行'};
 
   function fatal(msg){ $('loading').hidden = true; $('f').hidden = true; $('fatal').hidden = false; $('fatal').textContent = msg; }
@@ -196,7 +182,8 @@ button.go:disabled{opacity:.6}
   function check(){
     var errs = {};
     var phone = val('phone').replace(/[^0-9]/g, '');
-    if (!val('name')) errs.name = '請填姓名';
+    if (!val('name')) errs.name = '請填駕照上的全名';
+    else if (!/^[\u4e00-\u9fa5·．]{2,6}$|^[A-Za-z][A-Za-z.'-]*(\s+[A-Za-z][A-Za-z.'-]*)+$/.test(val('name')) || /^[小阿老][\u4e00-\u9fa5]$/.test(val('name'))) errs.name = '請填駕照上的全名，不要填暱稱（例：王大明）';
     if (!/^09\d{8}$/.test(phone)) errs.phone = '請填 10 碼手機號碼（09 開頭）';
     if (val('plate').replace(/[^A-Za-z0-9]/g, '').length < 4) errs.plate = '請填完整車牌';
     if (!brand) errs.brand = '請選廠牌';
@@ -206,10 +193,6 @@ button.go:disabled{opacity:.6}
     if (!/^([2-9]|1[0-9])$/.test(val('seats'))) errs.seats = '請填 2～19 的數字';
     if (!/^\d{3}$/.test(val('bankCode'))) errs.bankCode = '請填 3 碼銀行代碼（例：822）';
     if (!/^\d{10,16}$/.test(val('acct').replace(/[\s-]/g, ''))) errs.acct = '帳號請填 10～16 位數字';
-    var em = val('emPhone').replace(/[^0-9]/g, '');
-    if (em && !/^0\d{7,11}$/.test(em)) errs.emPhone = '請填正確的電話號碼';
-    else if (!em && val('emRel')) errs.emPhone = '有填關係的話，電話也要填';
-    if (em && !val('emRel')) errs.emRel = '請填對方關係（例：配偶）';
     FIELDS.forEach(function(k){
       $(k).classList.toggle('bad', !!errs[k]); $('e-' + k).textContent = errs[k] || '';
     });
@@ -239,8 +222,7 @@ button.go:disabled{opacity:.6}
     $('go').disabled = true; $('go').textContent = '送出中…';
     post({ action: 'drvLiff', op: 'save', idToken: idToken, disp: disp,
       card: { name: val('name'), phone: val('phone'), plate: val('plate').toUpperCase(), car: (brandText() + ' ' + val('car')).trim(), color: val('color'), seats: val('seats'),
-        bank: $('bank').value, acct: val('acct').replace(/[\s-]/g, ''), holder: val('holder'),
-        emPhone: val('emPhone').replace(/[^0-9]/g, ''), emRel: val('emRel') } })
+        bank: $('bank').value, acct: val('acct').replace(/[\s-]/g, ''), holder: val('holder') } })
       .then(function(j){
         if (!j || !j.ok) throw new Error((j && j.error) || '送出失敗，請再試一次');
         if (!j.done){ $('srvErr').hidden = false; $('srvErr').textContent = (j.msg || '資料有誤，請檢查後再送出').split('\n')[0]; return; }
@@ -278,7 +260,7 @@ button.go:disabled{opacity:.6}
       $('name').readOnly = true;
       goLabel = '送出更新'; $('go').textContent = goLabel;
     } else if (disp && !val('name')) {
-      $('name').placeholder = '真實姓名（LINE 名稱：' + disp + '）';
+      $('name').placeholder = '駕照上的全名（LINE 名稱：' + disp + '）';
     }
     $('loading').hidden = true; $('f').hidden = false;
   }).catch(function(err){ fatal(err && err.message ? err.message : '讀取失敗，請關掉後重新開啟'); });
