@@ -155,7 +155,7 @@ a{color:var(--accent)}
       return '<div class="car"><h4>'+esc([c.brand,c.model,c.spec].filter(Boolean).join(' '))+'　'+esc(c.plate)+'</h4><div class="tags" style="margin-bottom:6px">'+expTag('強制險',e.ins1)+expTag('任意險',e.ins2)+'</div><dl class="kv">'+
         kv('出廠',sl(c.year))+kv('牌照',c.plateType)+kv('座位',c.seats?c.seats+' 人座':'')+kv('車色',c.color)+kv('內裝',c.interior)+kv('菸',c.smoke)+
         kv('包膜',c.wrap?'有'+(c.wrapNote?'（'+c.wrapNote+'）':''):'無')+kv('改裝',c.mod?'有'+(c.modNote?'（'+c.modNote+'）':''):'無')+
-        kv('照片',(c.photos||0)+' 張外觀、'+(c.ins||0)+' 份保險單')+'</dl></div>'}).join('');
+        kv('照片',(c.photos||0)+' 張外觀、'+(c.ins||0)+' 份保險單')+kv('保險內容',c.insNote)+'</dl></div>'}).join('');
     body+='<div class="sec">司機</div><dl class="kv">'+kv('居住地區',r.area)+kv('可服務地區',r.serve)+kv('可接案時段',r.slots)+
       kv('緊急聯絡人',[r.em&&r.em.name,r.em&&r.em.rel?'（'+r.em.rel+'）':'',r.em&&r.em.phone].filter(Boolean).join(' '))+
       kv('禮車經驗',r.wexp)+kv('專長',r.skills)+kv('工具',r.tools+(f.deco?'（車頭彩照片 '+(r.deco||0)+' 張）':''))+kv('對講機',r.radios?r.radios+' 支':'')+
@@ -207,8 +207,8 @@ a{color:var(--accent)}
   }
   function csv(){
     var L=rows(), H, R;
-    if(tab==='wed'){ H=['姓名','手機','生肖','居住地區','可服務地區','可接案時段','緊急聯絡人','關係','緊急電話','廠牌','車款','規格','出廠年月','車牌','牌照','座位','車色','內裝','菸','包膜','改裝','外觀照片','保險單','強制險到期','任意險到期','禮車經驗','專長','工具','車頭彩照片','對講機','資料夾'];
-      R=[]; L.forEach(function(r){(r.cars&&r.cars.length?r.cars:[{}]).forEach(function(c){var e=c.exp||{},em=r.em||{};R.push([r.name,r.phone,r.zodiac,r.area,r.serve,r.slots,em.name,em.rel,em.phone,c.brand,c.model,c.spec,c.year,c.plate,c.plateType,c.seats,c.color,c.interior,c.smoke,c.wrap?'有 '+(c.wrapNote||''):'無',c.mod?'有 '+(c.modNote||''):'無',c.photos,c.ins,e.ins1,e.ins2,r.wexp,r.skills,r.tools,r.deco,r.radios,r.folder])})}); }
+    if(tab==='wed'){ H=['姓名','手機','生肖','居住地區','可服務地區','可接案時段','緊急聯絡人','關係','緊急電話','廠牌','車款','規格','出廠年月','車牌','牌照','座位','車色','內裝','菸','包膜','改裝','外觀照片','保險單','強制險到期','任意險到期','保險內容','禮車經驗','專長','工具','車頭彩照片','對講機','資料夾'];
+      R=[]; L.forEach(function(r){(r.cars&&r.cars.length?r.cars:[{}]).forEach(function(c){var e=c.exp||{},em=r.em||{};R.push([r.name,r.phone,r.zodiac,r.area,r.serve,r.slots,em.name,em.rel,em.phone,c.brand,c.model,c.spec,c.year,c.plate,c.plateType,c.seats,c.color,c.interior,c.smoke,c.wrap?'有 '+(c.wrapNote||''):'無',c.mod?'有 '+(c.modNote||''):'無',c.photos,c.ins,e.ins1,e.ins2,c.insNote,r.wexp,r.skills,r.tools,r.deco,r.radios,r.folder])})}); }
     else { H=['姓名','手機','綁定','居住地區','車款','車牌','車色','座位','駕照到期','行照到期','強制險到期','任意險到期','缺件','緊急聯絡關係','緊急電話','銀行','帳號','戶名','資料夾'];
       R=L.map(function(r){var d=r.docs||{},e=d.exp||{},b=r.bank||{},em=r.em||{};return [r.name,r.phone,r.bound?'已綁定':'未綁定',r.area,r.car,r.plate,r.color,r.seats,e.lic,e.reg,e.ins1,e.ins2,(d.miss||[]).join('、'),em.rel,em.phone,b.bank,b.acct,b.holder,d.folder]}); }
     var s='﻿'+[H].concat(R).map(function(row){return row.map(function(v){v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}).join(',')}).join('\r\n');
