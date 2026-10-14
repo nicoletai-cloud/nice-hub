@@ -313,7 +313,7 @@ nav.pages a.ext:hover{border-color:var(--accent);color:var(--accent)}
       <label for="inUrl">機器人程式網址（結尾是 /exec）</label>
       <input id="inUrl" type="text" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/…/exec">
       <label for="inTok">機器人金鑰（Apps Script 裡的 TOKEN）</label>
-      <input id="inTok" type="password" autocomplete="off" placeholder="貼上金鑰">
+      <input id="inTok" type="text" class="nwc-secret" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore placeholder="貼上金鑰" style="-webkit-text-security:disc">
       <div class="row"><button type="button" class="btn" id="saveConn">儲存並讀取</button><span class="st" id="connMsg"></span></div>
     </div>
   </details>
