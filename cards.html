@@ -109,9 +109,11 @@ a{color:var(--accent)}
   function ls(k){try{return localStorage.getItem(k)||''}catch(e){return ''}}
   function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
-  function botUrl(){var u=String(ls(KEY_URL)||'').trim(); if(!u) return ''; u=u.split('?')[0].split('#')[0]; return /^https:\/\/script\.google\.com\/macros\/s\/[^\/]+\/exec$/.test(u)?u:''}
+  /* 2026-10-15 同一台裝置已在禮車系統設定機器人連線的話，直接沿用，不用再設一次 */
+  function wedS(k){try{var o=JSON.parse(localStorage.getItem('nwcw_settings')||'{}')||{};return String(o[k]||'')}catch(e){return ''}}
+  function botUrl(){var u=String(ls(KEY_URL)||wedS('driveUrl')||'').trim(); if(!u) return ''; u=u.split('?')[0].split('#')[0]; return /^https:\/\/script\.google\.com\/macros\/s\/[^\/]+\/exec$/.test(u)?u:''}
   function post(body){
-    var url=botUrl(), token=String(ls(KEY_TOKEN)||'').trim();
+    var url=botUrl(), token=String(ls(KEY_TOKEN)||wedS('driveKey')||'').trim();
     if(!url||!token) return Promise.reject(new Error('尚未連線：請先在機場工具「派車機器人連線」填好網址與金鑰'));
     body.token=token;
     var ctl=('AbortController' in window)?new AbortController():null, timer=setTimeout(function(){ctl&&ctl.abort()},30000);

@@ -325,7 +325,9 @@ nav.pages a.ext:hover{border-color:var(--accent);color:var(--accent)}
   var KEY_URL='hhlc_bot_url', KEY_TOKEN='hhlc_bot_token', KEY_CACHE='nwc_hub_counts';
   function ls(k){try{return localStorage.getItem(k)||''}catch(e){return ''}}
   function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
-  function botUrl(){var u=String(ls(KEY_URL)||'').trim(); if(!u) return ''; u=u.split('?')[0].split('#')[0]; return /^https:\/\/script\.google\.com\/macros\/s\/[^\/]+\/exec$/.test(u)?u:''}
+  /* 2026-10-15 同一台裝置已在禮車系統設定機器人連線的話，直接沿用，不用再設一次 */
+  function wedS(k){try{var o=JSON.parse(localStorage.getItem('nwcw_settings')||'{}')||{};return String(o[k]||'')}catch(e){return ''}}
+  function botUrl(){var u=String(ls(KEY_URL)||wedS('driveUrl')||'').trim(); if(!u) return ''; u=u.split('?')[0].split('#')[0]; return /^https:\/\/script\.google\.com\/macros\/s\/[^\/]+\/exec$/.test(u)?u:''}
 
   var WD='日一二三四五六', now=new Date();
   $('today').textContent=(now.getMonth()+1)+'/'+now.getDate()+'（週'+WD[now.getDay()]+'）';
@@ -351,7 +353,7 @@ nav.pages a.ext:hover{border-color:var(--accent);color:var(--accent)}
   var busy=false;
   function load(){
     if(busy) return;
-    var url=botUrl(), token=String(ls(KEY_TOKEN)||'').trim();
+    var url=botUrl(), token=String(ls(KEY_TOKEN)||wedS('driveKey')||'').trim();
     if(!url||!token){
       $('note').hidden=false; openConn();
       status(cached&&cached.ts?'尚未連線機器人，顯示的是 '+hhmm(cached.ts)+' 的舊數字':'尚未連線機器人，還看不到今日待辦數量',true);
@@ -404,7 +406,7 @@ nav.pages a.ext:hover{border-color:var(--accent);color:var(--accent)}
   if(tdCache&&tdCache.data) tdRender(tdCache.data);
   var tdBusy=false;
   function loadToday(){
-    var url=botUrl(), token=String(ls(KEY_TOKEN)||'').trim();
+    var url=botUrl(), token=String(ls(KEY_TOKEN)||wedS('driveKey')||'').trim();
     if(!url||!token||tdBusy) return; tdBusy=true;
     fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({token:token,action:'hubToday'}),cache:'no-store'})
       .then(function(r){return r.json()})
@@ -513,7 +515,7 @@ nav.pages a.ext:hover{border-color:var(--accent);color:var(--accent)}
   }
   function calMsg(t,err){var m=$('calMsg'); m.textContent=t||''; m.classList.toggle('err',!!err)}
   function post(body){
-    var url=botUrl(), token=String(ls(KEY_TOKEN)||'').trim();
+    var url=botUrl(), token=String(ls(KEY_TOKEN)||wedS('driveKey')||'').trim();
     if(!url||!token) return Promise.reject(new Error('尚未連線'));
     body.token=token;
     var ctl=('AbortController' in window)?new AbortController():null, timer=setTimeout(function(){ctl&&ctl.abort()},25000);
@@ -635,7 +637,7 @@ nav.pages a.ext:hover{border-color:var(--accent);color:var(--accent)}
   function showPage(){
     if(location.hash==='#drivers'){ location.replace('cards.html?t=air&from=hub'); return; }   // 2026-10-15 司機頁併入司機資料總表
     var drv=(location.hash==='#drivers');
-    $('pgHome').hidden=drv; $('pgDrivers').hidden=!drv; $('note').hidden=drv?true:!!(botUrl()&&String(ls(KEY_TOKEN)||'').trim());
+    $('pgHome').hidden=drv; $('pgDrivers').hidden=!drv; $('note').hidden=drv?true:!!(botUrl()&&String(ls(KEY_TOKEN)||wedS('driveKey')||'').trim());
     $('pgLinkHome').setAttribute('aria-current',drv?'false':'page'); $('pgLinkDrivers').setAttribute('aria-current',drv?'page':'false');
     if(drv){renderDrivers(); loadDrivers(false)} else {renderCal()}
   }
