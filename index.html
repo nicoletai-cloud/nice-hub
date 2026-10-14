@@ -169,7 +169,7 @@ nav.pages a.ext:hover{border-color:var(--accent);color:var(--accent)}
   </header>
   <nav class="pages" aria-label="頁面">
     <a href="#" id="pgLinkHome" data-p="home" aria-current="page">總覽</a>
-    <a href="#drivers" id="pgLinkDrivers" data-p="drivers">司機</a>
+    <a href="cards.html?t=air&amp;from=hub" id="pgLinkDrivers" data-p="drivers">司機</a>
     <a class="ext" href="https://nicoletai-cloud.github.io/nice-wedding-car/">機場接送派車 →</a>
     <a class="ext" href="https://nicoletai-cloud.github.io/nice-wedding-procession/">結婚禮車派車 →</a>
   </nav>
@@ -551,6 +551,7 @@ nav.pages a.ext:hover{border-color:var(--accent);color:var(--accent)}
     }
   });
   function showPage(){
+    if(location.hash==='#drivers'){ location.replace('cards.html?t=air&from=hub'); return; }   // 2026-10-15 司機頁併入司機資料總表
     var drv=(location.hash==='#drivers');
     $('pgHome').hidden=drv; $('pgDrivers').hidden=!drv; $('note').hidden=drv?true:!!(botUrl()&&String(ls(KEY_TOKEN)||'').trim());
     $('pgLinkHome').setAttribute('aria-current',drv?'false':'page'); $('pgLinkDrivers').setAttribute('aria-current',drv?'page':'false');

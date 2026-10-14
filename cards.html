@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>司機資料總表</title>
+<title>司機</title>
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#A9793B">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -80,7 +80,7 @@ a{color:var(--accent)}
 <body>
 <div class="wrap">
   <header class="top">
-    <div class="brand"><span>Driver cards</span><b>司機資料總表</b></div>
+    <div class="brand"><span>Drivers</span><b>司機</b></div>
     <a class="back" id="back" href="https://nicoletai-cloud.github.io/nice-hub/">‹ 回入口</a>
   </header>
   <div class="tabs" role="tablist">
@@ -90,6 +90,7 @@ a{color:var(--accent)}
   <div class="bar"><span class="st" id="st">讀取中…</span><button type="button" class="btn" id="refresh">重新整理</button><button type="button" class="btn" id="csv">下載 CSV</button></div>
   <input class="q" id="q" type="search" placeholder="搜尋姓名、手機、車牌、車款、地區" autocomplete="off">
   <div class="chips" id="chips"></div>
+  <div class="bar" id="airTools" hidden><button type="button" class="btn" id="drvCopyNew">複製：新司機邀請文字</button><button type="button" class="btn" id="drvCopyOld">複製：舊好友補車卡文字</button><span class="st" id="drvMsg"></span></div>
   <div class="list" id="list"></div>
   <p class="note" id="note"></p>
 </div>
@@ -130,6 +131,18 @@ a{color:var(--accent)}
   function expSoon(v){return isDate(v)&&days(v)>=0&&days(v)<=30}
 
   var data=null, tab='wed', filter='all', busy=false;
+  /* 2026-10-15 合併「司機」頁：機場司機的回報平台綁定狀態、邀請文字、測試訊息、重設綁定 */
+  var FRIEND_URL='https://line.me/R/ti/p/@930ztusf', CARD_LINK='https://line.me/R/oaMessage/@930ztusf/?'+encodeURIComponent('車卡');
+  var drvData=null, KEY_DRV='nwc_hub_drv'; try{drvData=JSON.parse(ls(KEY_DRV)||'null')}catch(e){drvData=null}
+  function localDrivers(){try{var a=JSON.parse(ls('hhlc_drivers')||'[]'); return (Array.isArray(a)?a:[]).filter(function(d){return d&&d.name}).map(function(d){return {name:String(d.name),phone:String(d.phone||'')}})}catch(e){return []}}
+  function drvOf(name){var L=(drvData&&drvData.drivers)||[]; for(var i=0;i<L.length;i++) if(String(L[i].name)===String(name)) return L[i]; return null}
+  function drvMsg(t,err){var m=$('drvMsg'); if(!m) return; m.textContent=t||''; m.classList.toggle('err',!!err)}
+  function mdhm(ts){if(!ts) return ''; var d=new Date(ts); return (d.getMonth()+1)+'/'+d.getDate()+' '+pad(d.getHours())+':'+pad(d.getMinutes())}
+  function inviteText(code){return '好好禮車司機行程提醒：\n1. 請先加「好好禮車司機回報平台」為好友：'+((drvData&&drvData.friend)||FRIEND_URL)+'（已經是好友的不用重加）\n2. 在聊天室傳「綁定」，照機器人的問題回答，回答完按「確認」就完成了。'+(code?'\n（備用綁定碼：'+code+'）':'')}
+  function copyText(t,ok){function done(){drvMsg(ok)} function fail(){drvMsg('這個瀏覽器不能自動複製，請手動選取文字複製',true)}
+    if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done,fail);
+    else{try{var ta=document.createElement('textarea'); ta.value=t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); done()}catch(e){fail()}}}
+  function loadDrv(){post({action:'airDrivers',drivers:localDrivers()}).then(function(j){drvData={ts:Date.now(),ready:!!j.ready,friend:j.friend||'',drivers:j.drivers||[]}; lsSet(KEY_DRV,JSON.stringify(drvData)); if(drvData.ready===false) drvMsg('機器人還沒設定「司機回報平台」，目前只會產生綁定碼，沒辦法真的推播。',true); render()}).catch(function(e){drvMsg('綁定狀態讀取失敗：'+String(e&&e.message||e).slice(0,60),true)})}
   var CACHE='nwc_cards_cache';
   try{data=JSON.parse(ls(CACHE)||'null')}catch(e){data=null}
   var qs=new URLSearchParams(location.search); tab=qs.get('t')==='air'?'air':qs.get('t')==='wed'?'wed':(ls(KEY_TAB)==='air'?'air':'wed');
@@ -171,7 +184,7 @@ a{color:var(--accent)}
   function airHtml(r){
     var f=airFlags(r), d=r.docs||{}, e=d.exp||{}, b=r.bank||{}, em=r.em||{};
     var head='<div class="row1"><span class="nm">'+esc(r.name)+'</span><span class="ph">'+esc(r.phone)+'</span></div>'+
-      '<div class="sub">'+esc([r.car,r.plate,r.color,r.seats?r.seats+'人座':''].filter(Boolean).join('　')||'（還沒填車卡）')+'</div>'+
+      '<div class="sub">'+esc([r.car,r.plate,r.color,r.seats?r.seats+'人座':''].filter(Boolean).join('　')||'（還沒填車卡）')+(r._noCard?'　<span style="color:var(--warn)">只在派車名單、還沒建車卡</span>':'')+'</div>'+
       '<div class="tags">'+(f.unbound?'<span class="tg warn">未綁定</span>':'<span class="tg ok">已綁定</span>')+(f.bad?'<span class="tg bad">⛔證件過期</span>':'')+(f.soon&&!f.bad?'<span class="tg warn">證件快到期</span>':'')+(f.miss?'<span class="tg warn">📎待補</span>':'')+
       (r.area?'<span class="tg">'+esc(r.area)+'</span>':'')+'</div>';
     var n=d.n||{};
@@ -181,6 +194,9 @@ a{color:var(--accent)}
       kv('緊急聯絡人',[em.rel,em.phone].filter(Boolean).join(' '))+kv('收款帳戶',[b.bank,b.acct,b.holder].filter(Boolean).join(' '))+
       kv('綁定時間',ymd(r.boundAt))+kv('最後更新',ymd(r.updatedAt))+'</dl>'+
       (d.folder?'<p style="margin:10px 0 0"><a href="'+esc(d.folder)+'" target="_blank" rel="noopener">開 Google 雲端資料夾（證件）</a></p>':'');
+    var x=r._drv||{};
+    body+='<div class="sec">司機回報平台</div><dl class="kv">'+(r.bound?kv('LINE 名稱',x.disp||'（沒有顯示名稱）')+kv('綁定時間',x.boundAt?mdhm(x.boundAt):''):kv('狀態','未綁定，收不到接客前 18 小時的行程提醒')+kv('備用綁定碼',x.code||''))+(x.self?kv('建檔','司機自己建檔'):'')+'</dl>'+
+      '<div class="bar" style="margin:10px 0 0">'+(r.bound?'<button type="button" class="btn" data-dt="'+esc(r.name)+'">傳測試訊息</button><button type="button" class="btn" data-dr="'+esc(r.name)+'">重設綁定</button>':'<button type="button" class="btn" data-dc="'+esc(r.name)+'">複製邀請文字</button>')+'</div>';
     return '<details class="d"><summary>'+head+'</summary><div class="body">'+body+'</div></details>';
   }
   function kv(k,v){v=String(v==null?'':v).trim(); return v?'<dt>'+esc(k)+'</dt><dd>'+esc(v)+'</dd>':''}
@@ -189,9 +205,14 @@ a{color:var(--accent)}
     wed:[['all','全部',function(){return true}],['need','需要處理',function(r){var f=wedFlags(r);return f.bad||f.soon||f.miss}],['bad','保險過期',function(r){return wedFlags(r).bad}],['deco','有車頭彩',function(r){return wedFlags(r).deco}]],
     air:[['all','全部',function(){return true}],['need','需要處理',function(r){var f=airFlags(r);return f.unbound||f.bad||f.soon||f.miss}],['bad','證件過期',function(r){return airFlags(r).bad}],['unbound','未綁定',function(r){return !r.bound}]]
   };
-  function rows(){return ((data&&data[tab])||[]).slice().sort(function(a,b){return String(a.name).localeCompare(String(b.name),'zh-Hant')})}
+  function airMerged(){var A=((data&&data.air)||[]).map(function(r){var d=drvOf(r.name); return d?Object.assign({},r,{bound:r.bound||!!d.bound,_drv:d}):r}), have={};
+    A.forEach(function(r){have[String(r.name)]=1});
+    ((drvData&&drvData.drivers)||[]).forEach(function(d){if(!have[String(d.name)]) A.push({name:d.name,phone:d.phone||'',bound:!!d.bound,car:[d.car,d.color].filter(Boolean).join(' '),plate:d.plate||'',seats:d.seats||'',_drv:d,_noCard:true,docs:{}})});
+    return A}
+  function rows(){return (tab==='air'?airMerged():((data&&data[tab])||[])).slice().sort(function(a,b){return String(a.name).localeCompare(String(b.name),'zh-Hant')})}
   function render(){
     document.querySelectorAll('.tab').forEach(function(t){t.setAttribute('aria-selected',String(t.getAttribute('data-t')===tab))});
+    $('airTools').hidden=tab!=='air';
     var all=rows(), F=FILTERS[tab]; if(!F.some(function(x){return x[0]===filter})) filter='all';
     $('chips').innerHTML=F.map(function(x){return '<button type="button" class="chip" data-f="'+x[0]+'" aria-pressed="'+(x[0]===filter)+'">'+x[1]+' <b>'+all.filter(x[2]).length+'</b></button>'}).join('');
     var fn=F.filter(function(x){return x[0]===filter})[0][2], q=$('q').value.trim().toLowerCase();
@@ -217,9 +238,17 @@ a{color:var(--accent)}
   document.querySelector('.tabs').addEventListener('click',function(e){var t=e.target.closest('.tab'); if(!t) return; tab=t.getAttribute('data-t'); lsSet(KEY_TAB,tab); filter='all'; render()});
   $('chips').addEventListener('click',function(e){var c=e.target.closest('.chip'); if(!c) return; filter=c.getAttribute('data-f'); render()});
   $('q').addEventListener('input',render);
-  $('refresh').addEventListener('click',load);
+  $('refresh').addEventListener('click',function(){load(); loadDrv()});
   $('csv').addEventListener('click',csv);
-  render(); load();
+  $('drvCopyNew').addEventListener('click',function(){copyText('請點選以下連結，加入好好禮車司機回報平台並完成司機帳號綁定：\n'+((drvData&&drvData.friend)||FRIEND_URL),'已複製新司機邀請文字')});
+  $('drvCopyOld').addEventListener('click',function(){copyText('為完善系統建檔，請點選以下連結完成司機帳號綁定：\n'+CARD_LINK,'已複製舊好友補車卡文字')});
+  $('list').addEventListener('click',function(ev){var b=ev.target.closest('button'); if(!b) return;
+    if(b.hasAttribute('data-dc')){var x=drvOf(b.getAttribute('data-dc'))||{}; return copyText(inviteText(x.code),'已複製「'+b.getAttribute('data-dc')+'」的邀請文字')}
+    if(b.hasAttribute('data-dt')){var n=b.getAttribute('data-dt'); b.disabled=true; drvMsg('傳送測試訊息給 '+n+'…'); post({action:'drvTest',name:n}).then(function(j){drvMsg(j.msg||'已傳送')}).catch(function(e){drvMsg(String(e&&e.message||e).slice(0,80),true)}).then(function(){b.disabled=false}); return}
+    if(b.hasAttribute('data-dr')){var r=b.getAttribute('data-dr'); if(b.getAttribute('data-sure')!=='1'){b.setAttribute('data-sure','1'); b.textContent='確定重設？再按一次'; setTimeout(function(){b.removeAttribute('data-sure'); b.textContent='重設綁定'},6000); return}
+      b.disabled=true; post({action:'drvReset',name:r,drivers:localDrivers()}).then(function(j){drvMsg(j.msg||'已重設'); loadDrv()}).catch(function(e){drvMsg(String(e&&e.message||e).slice(0,80),true); b.disabled=false})}
+  });
+  render(); load(); loadDrv();
 })();
 </script>
 </body>
