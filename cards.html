@@ -94,7 +94,7 @@ a{color:var(--accent)}
     <button type="button" class="tab" role="tab" data-t="wed" aria-selected="true">禮車</button>
     <button type="button" class="tab" role="tab" data-t="air" aria-selected="false">機場接送</button>
   </div>
-  <div class="bar"><span class="st" id="st">讀取中…</span><button type="button" class="btn" id="refresh">重新整理</button><button type="button" class="btn" id="csv">下載 CSV</button></div>
+  <div class="bar"><span class="st" id="st">讀取中…</span><button type="button" class="btn" id="refresh">重新整理</button><button type="button" class="btn" id="csv">下載 CSV</button><button type="button" class="btn" id="rvSort" aria-pressed="false">依評價積分排序</button></div>
   <input class="q" id="q" type="search" placeholder="搜尋姓名、手機、車牌、車款、地區" autocomplete="off">
   <div class="chips" id="chips"></div>
   <div class="bar" id="airTools" hidden><button type="button" class="btn" id="drvCopyNew">複製：新司機邀請文字</button><button type="button" class="btn" id="drvCopyOld">複製：舊好友補車卡文字</button><span class="st" id="drvMsg"></span></div>
@@ -139,7 +139,10 @@ a{color:var(--accent)}
   function expBad(v){return isDate(v)&&days(v)<0}
   function expSoon(v){return isDate(v)&&days(v)>=0&&days(v)<=30}
 
-  var data=null, tab='wed', filter='all', busy=false;
+  var data=null, tab='wed', filter='all', busy=false, rvSort=false;
+  /* 2026-10-15 司機客戶評價積分（滿意 +1、抱怨 −2；只給後台看） */
+  function rvOf(n){var k=String(n||'').replace(/[（(][^）)]*[）)]/g,'').replace(/\s/g,'');return (data&&data.rv&&data.rv[k])||null}
+  function rvTag(n){var x=rvOf(n);if(!x)return '<span class="sub">尚無評價</span>';return '<span class="sub" style="color:'+(x.score<0?'#A0453A':'#5e7448')+';font-weight:700">⭐ 積分 '+(x.score>0?'+':'')+x.score+'（滿意 '+x.pos+'・抱怨 '+x.neg+'）</span>'}
   /* 2026-10-15 合併「司機」頁：機場司機的回報平台綁定狀態、邀請文字、測試訊息、重設綁定 */
   var FRIEND_URL='https://line.me/R/ti/p/@930ztusf', CARD_LINK='https://line.me/R/oaMessage/@930ztusf/?'+encodeURIComponent('車卡');
   var drvData=null, KEY_DRV='nwc_hub_drv'; try{drvData=JSON.parse(ls(KEY_DRV)||'null')}catch(e){drvData=null}
@@ -169,7 +172,7 @@ a{color:var(--accent)}
   function wedText(r){return [r.name,r.phone,r.area,r.serve,(r.cars||[]).map(function(c){return [c.brand,c.model,c.plate,c.color].join(' ')}).join(' ')].join(' ').toLowerCase()}
   function wedHtml(r){
     var f=wedFlags(r), cars=r.cars||[];
-    var head='<div class="row1"><span class="nm">'+esc(r.name)+'</span><span class="ph">'+esc(r.phone)+'</span>'+(r.zodiac?'<span class="sub">屬'+esc(r.zodiac)+'</span>':'')+'</div>'+
+    var head='<div class="row1"><span class="nm">'+esc(r.name)+'</span><span class="ph">'+esc(r.phone)+'</span>'+rvTag(r.name)+(r.zodiac?'<span class="sub">屬'+esc(r.zodiac)+'</span>':'')+'</div>'+
       '<div class="sub">'+esc(cars.map(function(c){return [c.brand,c.model,c.plate].filter(Boolean).join(' ')}).join('｜')||'（沒有車）')+'</div>'+
       '<div class="tags">'+(f.bad?'<span class="tg bad">⛔保險過期</span>':'')+(f.soon&&!f.bad?'<span class="tg warn">保險快到期</span>':'')+(f.miss?'<span class="tg warn">📎待補</span>':'')+(!f.bad&&!f.soon&&!f.miss?'<span class="tg ok">✅資料齊全</span>':'')+
       (r.serve?'<span class="tg">可服務：'+esc(r.serve)+'</span>':'')+(f.deco?'<span class="tg">有車頭彩</span>':'')+'</div>';
@@ -192,7 +195,7 @@ a{color:var(--accent)}
   function airText(r){return [r.name,r.phone,r.car,r.plate,r.area].join(' ').toLowerCase()}
   function airHtml(r){
     var f=airFlags(r), d=r.docs||{}, e=d.exp||{}, b=r.bank||{}, em=r.em||{};
-    var head='<div class="row1"><span class="nm">'+esc(r.name)+'</span><span class="ph">'+esc(r.phone)+'</span></div>'+
+    var head='<div class="row1"><span class="nm">'+esc(r.name)+'</span><span class="ph">'+esc(r.phone)+'</span>'+rvTag(r.name)+'</div>'+
       '<div class="sub">'+esc([r.car,r.plate,r.color,r.seats?r.seats+'人座':''].filter(Boolean).join('　')||'（還沒填車卡）')+(r._noCard?'　<span style="color:var(--warn)">只在派車名單、還沒建車卡</span>':'')+'</div>'+
       '<div class="tags">'+(f.unbound?'<span class="tg warn">未綁定</span>':'<span class="tg ok">已綁定</span>')+(f.bad?'<span class="tg bad">⛔證件過期</span>':'')+(f.soon&&!f.bad?'<span class="tg warn">證件快到期</span>':'')+(f.miss?'<span class="tg warn">📎待補</span>':'')+
       (r.area?'<span class="tg">'+esc(r.area)+'</span>':'')+'</div>';
@@ -218,7 +221,7 @@ a{color:var(--accent)}
     A.forEach(function(r){have[String(r.name)]=1});
     ((drvData&&drvData.drivers)||[]).forEach(function(d){if(!have[String(d.name)]) A.push({name:d.name,phone:d.phone||'',bound:!!d.bound,car:[d.car,d.color].filter(Boolean).join(' '),plate:d.plate||'',seats:d.seats||'',_drv:d,_noCard:true,docs:{}})});
     return A}
-  function rows(){return (tab==='air'?airMerged():((data&&data[tab])||[])).slice().sort(function(a,b){return String(a.name).localeCompare(String(b.name),'zh-Hant')})}
+  function rows(){return (tab==='air'?airMerged():((data&&data[tab])||[])).slice().sort(function(a,b){if(rvSort){var x=rvOf(a.name),y=rvOf(b.name),d=(y?y.score:-1e9)-(x?x.score:-1e9);if(d)return d}return String(a.name).localeCompare(String(b.name),'zh-Hant')})}
   function render(){
     document.querySelectorAll('.tab').forEach(function(t){t.setAttribute('aria-selected',String(t.getAttribute('data-t')===tab))});
     $('airTools').hidden=tab!=='air';
@@ -231,7 +234,7 @@ a{color:var(--accent)}
   }
   function load(){
     if(busy) return; busy=true; $('st').classList.remove('err'); $('st').textContent=data?'更新中…':'讀取中…';
-    post({action:'cardsAll'}).then(function(j){data={wed:j.wed||[],air:j.air||[],ts:Date.now()}; lsSet(CACHE,JSON.stringify(data)); $('st').textContent='禮車 '+data.wed.length+' 位、機場 '+data.air.length+' 位｜'+new Date().toTimeString().slice(0,5)+' 更新'; render()})
+    post({action:'cardsAll'}).then(function(j){data={wed:j.wed||[],air:j.air||[],rv:j.rv||{},ts:Date.now()}; lsSet(CACHE,JSON.stringify(data)); $('st').textContent='禮車 '+data.wed.length+' 位、機場 '+data.air.length+' 位｜'+new Date().toTimeString().slice(0,5)+' 更新'; render()})
       .catch(function(e){$('st').classList.add('err'); $('st').textContent=e.message+(data&&data.ts?'（顯示 '+ymd(data.ts)+' 的舊資料）':''); render()})
       .then(function(){busy=false});
   }
@@ -249,6 +252,7 @@ a{color:var(--accent)}
   $('q').addEventListener('input',render);
   $('refresh').addEventListener('click',function(){load(); loadDrv()});
   $('csv').addEventListener('click',csv);
+  $('rvSort').addEventListener('click',function(){rvSort=!rvSort;this.setAttribute('aria-pressed',String(rvSort));this.classList.toggle('pri',rvSort);render()});
   $('drvCopyNew').addEventListener('click',function(){copyText('請點選以下連結，加入好好禮車司機回報平台並完成司機帳號綁定：\n'+((drvData&&drvData.friend)||FRIEND_URL),'已複製新司機邀請文字')});
   $('drvCopyOld').addEventListener('click',function(){copyText('為完善系統建檔，請點選以下連結完成司機帳號綁定：\n'+CARD_LINK,'已複製舊好友補車卡文字')});
   $('list').addEventListener('click',function(ev){var b=ev.target.closest('button'); if(!b) return;
