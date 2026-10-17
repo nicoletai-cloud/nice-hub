@@ -448,5 +448,47 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   }).catch(function(err){ fatal(err && err.message ? err.message : '讀取失敗，請關掉後重新開啟'); });
 })();
 </script>
+<script>/* 2026-10-17 中英文、數字與中文之間自動加空格（畫面＋複製的文字）；輸入框、網址不動 */
+(function(){
+  if (window.nwcSpace) return;
+  var H = '㄀-ㄯ㐀-䶿一-鿿豈-﫿', T = /[㄀-ㄯ㐀-䶿一-鿿豈-﫿]/,
+      A = new RegExp('([' + H + '])([A-Za-z0-9$@#])', 'g'), B = new RegExp('([A-Za-z0-9%])([' + H + '])', 'g');
+  function sp(t){
+    if (typeof t !== 'string' || !T.test(t)) return t;
+    var P = t.split(/(https?:\/\/[\x21-\x7e]+|[\w.+-]+@[\w-]+\.[A-Za-z][\w.-]*)/), o = '';
+    for (var i = 0; i < P.length; i++){ var p = i % 2 ? P[i] : P[i].replace(A, '$1 $2').replace(B, '$1 $2'); if (p && o && (i % 2 ? T.test(o.slice(-1)) : T.test(p.charAt(0)) && !/\s$/.test(o))) o += ' '; o += p; }
+    return o;
+  }
+  window.nwcSpace = sp;
+  var SKIP = /^(SCRIPT|STYLE|TEXTAREA|INPUT|SELECT|OPTION|CODE|NOSCRIPT|SVG)$/i;
+  function skip(el){ return !el || SKIP.test(el.nodeName) || el.isContentEditable || (el.closest && el.closest('.nopangu,[contenteditable="true"]')); }
+  function fix(n){
+    if (!n) return;
+    if (n.nodeType === 3){ if (skip(n.parentNode)) return; var v = n.nodeValue, w = sp(v); if (w !== v) n.nodeValue = w; return; }
+    if (n.nodeType !== 1 || skip(n)) return;
+    if (n.placeholder && /^(INPUT|TEXTAREA)$/.test(n.nodeName)){ var ph = sp(n.placeholder); if (ph !== n.placeholder) n.placeholder = ph; }
+    var c = n.childNodes; for (var i = 0; i < c.length; i++) fix(c[i]);
+    if (n.querySelectorAll){ var ins = n.querySelectorAll('input[placeholder],textarea[placeholder]'); for (var j = 0; j < ins.length; j++){ var q = sp(ins[j].placeholder); if (q !== ins[j].placeholder) ins[j].placeholder = q; } }
+  }
+  var Q = [], tm = 0;
+  function run(){ tm = 0; var L = Q; Q = []; for (var i = 0; i < L.length; i++) fix(L[i]); }
+  function start(){
+    fix(document.body); if (document.title) document.title = sp(document.title);
+    new MutationObserver(function(ms){ for (var i = 0; i < ms.length; i++){ var m = ms[i]; if (m.type === 'characterData') Q.push(m.target); else for (var j = 0; j < m.addedNodes.length; j++) Q.push(m.addedNodes[j]); } if (!tm) tm = setTimeout(run, 0); })
+      .observe(document.body, { childList: true, subtree: true, characterData: true });
+  }
+  if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
+  // 複製出去的文字也加空格（複製按鈕、手動選取複製都適用）
+  try { if (navigator.clipboard && navigator.clipboard.writeText){ var w = navigator.clipboard.writeText.bind(navigator.clipboard); navigator.clipboard.writeText = function(t){ return w(sp(String(t))); }; } } catch (e) {}
+  document.addEventListener('copy', function(e){
+    try {
+      var a = document.activeElement, s = '';
+      if (a && /^(TEXTAREA|INPUT)$/.test(a.nodeName) && a.selectionStart != null) s = a.value.substring(a.selectionStart, a.selectionEnd);
+      else s = String(window.getSelection ? window.getSelection() : '');
+      var t = sp(s); if (s && t !== s && e.clipboardData){ e.clipboardData.setData('text/plain', t); e.preventDefault(); }
+    } catch (x) {}
+  }, true);
+})();
+</script>
 </body>
 </html>
