@@ -556,6 +556,8 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
 (function(){
   var MODE = (function(){ var q = location.search; try { q = decodeURIComponent(q); } catch (e) {} var m = q.match(/[?&]p=(lesson|post)\b/); return m ? m[1] : ''; })();
   if (!MODE) return;
+  // 2026-10-17 群組裡「已聯絡新人」按鈕會帶 &id=訂單，直接打開這一趟
+  var QID = (function(){ var q = location.search; try { q = decodeURIComponent(q); } catch (e) {} var m = q.match(/[?&]id=([^&#]+)/); return m ? m[1] : ''; })();
   var BOT = 'https://script.google.com/macros/s/AKfycbwoKk13j5YOtkA5cTh3FtvECekYm0uMBPsid1H--kB7bhUVpDFvSnSA0iTzCfc8IT11_Q/exec';
   var LIFF_ID = '2011949076-1fqUEtE2', idToken = '';
   function post(body){ body.idToken = idToken; return fetch(BOT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) }).then(function(r){ return r.json(); }); }
@@ -658,6 +660,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   function postPage(j){
     var T = j.trips || [];
     if (!T.length){ body('<h1>負責人發文</h1><div class="note warn" style="margin-top:14px">目前沒有已公布的車趟。\n派車單在群組發佈後，這裡才會出現；如果已經發佈還是看不到，請聯絡派車人員確認。</div>'); return; }
+    if (QID){ var hit = T.filter(function(t){ return t.id === QID; })[0]; if (hit) return postForm([hit], T.length > 1 ? j : null); }
     if (T.length === 1) return postForm([T[0]], null);
     body('<h1>我已聯絡新人</h1><p class="sub">請選擇你剛剛電話聯絡的是哪一場：</p><div id="tripPick" style="display:grid;gap:10px;margin-top:8px"></div>');
     var box = document.getElementById('tripPick');
@@ -730,7 +733,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
         '<div class="note ok" style="margin-top:12px">貼到群組的方法：\n1. 在群組輸入框先打「@」，選「All」\n2. 再長按輸入框貼上</div>' +
         '<button class="go" id="cp">📋 複製發文</button><button class="go ghost" id="back">返回修改</button>';
       document.getElementById('back').onclick = function(){ box.hidden = true; document.getElementById('pf').hidden = false; window.scrollTo(0, 0); };
-      document.getElementById('cp').onclick = function(){ var b = this; copyText(txt).then(function(){ flash(b, '✅ 已複製，到群組貼上'); post({ action: 'wedLiff', op: 'postDone', id: cur.id, label: md(cur.date) + ' ' + cur.name + (cur.code ? '（' + cur.code + '）' : '') }).catch(function(){}); }, function(){ flash(b, '複製失敗，請再試一次'); }); };
+      document.getElementById('cp').onclick = function(){ var b = this; copyText(txt).then(function(){ flash(b, '✅ 已複製，到群組貼上'); post({ action: 'wedLiff', op: 'postDone', id: cur.id, gather: gather, label: md(cur.date) + ' ' + cur.name + (cur.code ? '（' + cur.code + '）' : '') }).catch(function(){}); }, function(){ flash(b, '複製失敗，請再試一次'); }); };
       window.scrollTo(0, 0);
     };
     function pickShow(){ document.getElementById('pf').hidden = true; document.getElementById('pvBox').hidden = true; document.getElementById('pick').hidden = false; window.scrollTo(0, 0); }
