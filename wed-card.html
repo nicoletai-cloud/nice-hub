@@ -638,8 +638,10 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   function fmt(t){ var d = new Date(t); return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
   function readBox(j){
     var el = document.getElementById('lread'), r = j.read;
-    if (r && r.ver === j.ver){ el.innerHTML = '<div class="note ok">✅ 你已在 ' + fmt(r.at) + ' 讀完這個版本，謝謝！</div>'; return; }
-    el.innerHTML = (r ? '<div class="note warn">教案在你上次讀過之後有更新，請再看一次。</div>' : '') + '<button class="go" id="iread">✅ 我已詳讀完畢</button>';
+    // 2026-10-20 Nicole：教案閱讀每週審核一次（週一到週日，週六週日同一週）；本週讀過、教案也沒更新 → 顯示已確認閱讀
+    var wk = (function(){ var d = new Date(Date.now() + 8 * 36e5), off = (d.getUTCDay() + 6) % 7; return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - 8 * 36e5 - off * 864e5; })();
+    if (r && r.ver === j.ver && +r.at >= wk){ el.innerHTML = '<div class="note ok">✅ 您已於 ' + fmt(r.at) + ' 確認閱讀，本週無更新教案內容</div>'; return; }
+    el.innerHTML = (r && r.ver !== j.ver ? '<div class="note warn">教案在你上次讀過之後有更新，請再看一次。</div>' : '') + '<button class="go" id="iread">✅ 我已詳讀完畢</button>';
     document.getElementById('iread').onclick = function(){
       var b = this; b.disabled = true; b.textContent = '記錄中…';
       post({ action: 'wedLiff', op: 'lessonRead', ver: j.ver }).then(function(x){ if (!x || !x.ok) throw new Error((x && x.error) || ''); j.read = { ver: j.ver, at: x.at }; readBox(j); })
