@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name         好好禮車｜蝦皮聊聊未讀提醒
 // @namespace    https://nicoletai-cloud.github.io/
-// @version      1.0
+// @version      1.1
 // @description  開著蝦皮聊聊頁，每分鐘把「未讀」聊聊回報給好好禮車系統；超過 15 分鐘沒看，好好禮車機器人會在 LINE 提醒。只讀清單，不會打開對話、不會幫你回覆。
 // @match        https://seller.shopee.tw/new-webchat/*
 // @match        https://accounts.shopee.tw/seller/login*
+// @match        https://nicoletai-cloud.github.io/nice-wedding-procession/*
 // @grant        GM_xmlhttpRequest
 // @grant        GM_getValue
 // @grant        GM_setValue
@@ -23,8 +24,15 @@
     var k = prompt('請輸入好好禮車系統的金鑰（只存在這台電腦的 Tampermonkey 裡）', '');
     if (k !== null) { GM_setValue('key', k.trim()); alert(k.trim() ? '已儲存，開始回報蝦皮未讀聊聊' : '已清除金鑰'); location.reload(); }
   });
+  // 1.1 金鑰自動帶入：在這台電腦打開「好好禮車婚禮派車」時，從派車系統已存好的設定讀金鑰，存進 Tampermonkey（不顯示、不用手打）
+  if (location.hostname === 'nicoletai-cloud.github.io') {
+    try { var ws = JSON.parse(localStorage.getItem('nwcw_settings') || '{}') || {}, k2 = String(ws.driveKey || '').trim();
+      if (k2 && k2 !== GM_getValue('key', '')) { GM_setValue('key', k2); var n = document.createElement('div'); n.textContent = '好好禮車｜蝦皮聊聊提醒已自動帶入金鑰，回到蝦皮聊聊分頁重新整理即可'; n.style.cssText = 'position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:99999;background:#7A5A2B;color:#fff;font:13px/1.4 system-ui,sans-serif;padding:8px 12px;border-radius:8px'; document.body.appendChild(n); setTimeout(function () { n.remove(); }, 6000); }
+    } catch (e) {}
+    return;
+  }
   var key = GM_getValue('key', '');
-  if (!key) { badge('尚未設定金鑰：點 Tampermonkey 圖示 →「設定好好禮車金鑰」', true); return; }
+  if (!key) { badge('尚未帶入金鑰：請在這台電腦打開「好好禮車婚禮派車」一次，再回來重新整理', true); return; }
 
   function send(body, cb) {
     body.token = key; body.action = 'shopeeChat';
