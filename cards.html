@@ -178,7 +178,7 @@ a{color:var(--accent)}
       (r.serve?'<span class="tg">可服務：'+esc(r.serve)+'</span>':'')+(f.deco?'<span class="tg">有車頭彩</span>':'')+'</div>';
     var body=cars.map(function(c){var e=c.exp||{};
       return '<div class="car"><h4>'+esc([c.brand,c.model,c.spec].filter(Boolean).join(' '))+'　'+esc(c.plate)+'</h4><div class="tags" style="margin-bottom:6px">'+expTag('強制險',e.ins1)+expTag('任意險',e.ins2)+'</div><dl class="kv">'+
-        kv('出廠',sl(c.year))+kv('牌照',c.plateType)+kv('座位',c.seats?c.seats+' 人座':'')+kv('車色',c.color)+kv('內裝',c.interior)+kv('菸',c.smoke)+
+        kv('出廠',sl(c.year))+kv('牌照',String(c.plateType||'').replace('個人牌照','個人車牌').replace('多元牌照','多元車牌'))+kv('座位',c.seats?c.seats+' 人座':'')+kv('車色',c.color)+kv('內裝',c.interior)+kv('菸',c.smoke)+
         kv('包膜',c.wrap?'有'+(c.wrapNote?'（'+c.wrapNote+'）':''):'無')+kv('改裝',c.mod?'有'+(c.modNote?'（'+c.modNote+'）':''):'無')+
         kv('照片',(c.photos||0)+' 張外觀、'+(c.ins||0)+' 份保險單')+kv('保險內容',c.insNote)+'</dl></div>'}).join('');
     body+='<div class="sec">司機</div><dl class="kv">'+kv('居住地區',r.area)+kv('可服務地區',r.serve)+kv('可接案時段',r.slots)+

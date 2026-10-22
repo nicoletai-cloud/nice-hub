@@ -160,7 +160,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     </div>
     <div class="field">
       <label>牌照類型</label>
-      <div class="chips" data-pick="plateType" data-opts="個人牌照|R 牌短租|R 牌長租|多元牌照"></div>
+      <div class="chips" data-pick="plateType" data-opts="個人車牌|多元車牌|R 牌短租|R 牌長租"></div>
       <div class="err" id="e-plateType"></div>
     </div>
     <div class="field">
@@ -268,7 +268,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   function pickOpts(k){ var box = document.querySelector('.chips[data-pick="' + k + '"]'); return k === 'serve' ? Object.keys(TW) : box.getAttribute('data-opts').split('|'); }
   function drawPick(k){ document.querySelectorAll('.chips[data-pick="' + k + '"] .chip').forEach(function(c){ c.setAttribute('aria-pressed', String(PICK[k].indexOf(c.textContent) >= 0)); }); if (k === 'tools') renderDeco(); }
   function pickText(k){ return pickOpts(k).filter(function(o){ return PICK[k].indexOf(o) >= 0; }).join('、'); }
-  function setPick(k, t){ t = String(t == null ? '' : t); PICK[k] = pickOpts(k).filter(function(o){ return t === o || ('、' + t + '、').indexOf('、' + o + '、') >= 0; }); drawPick(k); }
+  function setPick(k, t){ t = String(t == null ? '' : t); if (k === 'plateType') t = t.replace('個人牌照', '個人車牌').replace('多元牌照', '多元車牌');   /* 2026-10-22 Nicole：牌照類型改叫 個人車牌／多元車牌／R 牌短租／R 牌長租 */ PICK[k] = pickOpts(k).filter(function(o){ return t === o || ('、' + t + '、').indexOf('、' + o + '、') >= 0; }); drawPick(k); }
   document.querySelectorAll('.chips[data-pick]').forEach(function(box){
     var k = box.getAttribute('data-pick'), multi = box.getAttribute('data-multi') === '1'; PICK[k] = [];
     box.innerHTML = pickOpts(k).map(function(o){ return '<button type="button" class="chip">' + o + '</button>'; }).join('');
