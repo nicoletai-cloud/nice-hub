@@ -735,7 +735,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
         '<div class="note ok" style="margin-top:12px">貼到群組的方法：\n1. 在群組輸入框先打「@」，選「All」\n2. 再長按輸入框貼上</div>' +
         '<button class="go" id="cp">📋 複製發文</button><button class="go ghost" id="back">返回修改</button>';
       document.getElementById('back').onclick = function(){ box.hidden = true; document.getElementById('pf').hidden = false; window.scrollTo(0, 0); };
-      document.getElementById('cp').onclick = function(){ var b = this; copyText(txt).then(function(){ flash(b, '✅ 已複製，到群組貼上'); post({ action: 'wedLiff', op: 'postDone', id: cur.id, gather: gather, label: md(cur.date) + ' ' + cur.name + (cur.code ? '（' + cur.code + '）' : '') }).catch(function(){}); }, function(){ flash(b, '複製失敗，請再試一次'); }); };
+      document.getElementById('cp').onclick = function(){ var b = this; /* 2026-10-24 按下就回報已聯絡新人（不管複製成不成功），避免手動複製時漏記 */ if (!cur.__done) { cur.__done = true; post({ action: 'wedLiff', op: 'postDone', id: cur.id, gather: gather, label: md(cur.date) + ' ' + cur.name + (cur.code ? '（' + cur.code + '）' : '') }).catch(function(){ cur.__done = false; }); } Promise.resolve().then(function(){ return copyText(txt); }).then(function(){ flash(b, '✅ 已複製，到群組貼上'); }, function(){ flash(b, '複製失敗：請長按上面的預覽文字自己複製'); }); };
       window.scrollTo(0, 0);
     };
     function pickShow(){ document.getElementById('pf').hidden = true; document.getElementById('pvBox').hidden = true; document.getElementById('pick').hidden = false; window.scrollTo(0, 0); }
