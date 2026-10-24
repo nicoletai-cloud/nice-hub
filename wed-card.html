@@ -653,7 +653,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     document.getElementById('iread').onclick = function(){
       var b = this; b.disabled = true; b.textContent = '記錄中…';
       var secs = ltSecs();
-      post({ action: 'wedLiff', op: 'lessonRead', ver: j.ver, secs: secs }).then(function(x){ if (!x || !x.ok) throw new Error((x && x.error) || ''); j.read = { ver: j.ver, at: x.at }; LT.done = true; clearInterval(LT.iv); var tl = document.getElementById('ltimer'); if (tl) tl.textContent = '✅ 已記錄閱讀時間 ' + ltMMSS(secs); readBox(j); })
+      post({ action: 'wedLiff', op: 'lessonRead', ver: j.ver, secs: secs }).then(function(x){ if (!x || !x.ok) throw new Error((x && x.error) || ''); j.read = { ver: j.ver, at: x.at }; LT.done = true; clearInterval(LT.iv); var tl = document.getElementById('ltimer'); if (tl) tl.hidden = true; readBox(j); })
         .catch(function(){ b.disabled = false; b.textContent = '✅ 我已詳讀完畢'; alert('記錄失敗，請再按一次'); });
     };
   }
