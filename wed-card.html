@@ -594,7 +594,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   /* ---------- 教案 ---------- */
   function lesson(j){
     var d = new Date(j.ver), vtxt = (d.getMonth() + 1) + '/' + d.getDate();
-    body('<h1>禮車司機教案</h1><p class="sub">最後更新 ' + vtxt + '・內容會持續更新，每次任務前請再讀一次</p><nav class="lnav" id="lnav"></nav><div id="ldoc"></div><div class="lread" id="lread"></div>');
+    body('<h1>禮車司機教案</h1><p class="sub">最後更新 ' + vtxt + '・內容會持續更新，每次任務前請再讀一次</p><div id="ltimer" style="position:sticky;top:0;z-index:5;background:#fff3cd;color:#7a5a00;font-weight:700;text-align:center;padding:7px 10px;border-radius:8px;margin:6px 0">⏱ 閱讀計時 00:00</div><nav class="lnav" id="lnav"></nav><div id="ldoc"></div><div class="lread" id="lread"></div>');
     var host = document.getElementById('ldoc'), sh = host.attachShadow ? host.attachShadow({ mode: 'closed' }) : host;
     sh.innerHTML = j.html + '<style>:host{display:block;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}' +
       '*{max-width:100%!important;box-sizing:border-box}img{height:auto!important;max-width:100%!important;width:100%!important}span:has(>img){width:auto!important;height:auto!important}' +
@@ -633,8 +633,16 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     var now = new Date(), wm = (j.who.name || '') + ' ' + (j.who.ph ? '***' + j.who.ph : '') + ' ' + (now.getMonth() + 1) + '/' + now.getDate();
     var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="260" height="170"><text x="10" y="110" transform="rotate(-24 130 85)" font-size="17" font-family="sans-serif" fill="rgba(120,120,120,0.16)">' + esc(wm) + '</text></svg>';
     var w = document.createElement('div'); w.className = 'wm'; w.style.backgroundImage = 'url("data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg) + '")'; document.body.appendChild(w);
+    // 2026-10-24 Nicole：開始閱讀就計時（切到別的 App 時暫停），按「已詳讀」時一起記錄閱讀時間
+    LT.acc = 0; LT.t0 = Date.now(); LT.on = !document.hidden; LT.done = false;
+    if (!LT.bound){ LT.bound = true; document.addEventListener('visibilitychange', function(){ if (document.hidden){ if (LT.on){ LT.acc += Date.now() - LT.t0; LT.on = false; } } else if (!LT.on){ LT.t0 = Date.now(); LT.on = true; } }); }
+    clearInterval(LT.iv); LT.iv = setInterval(ltTick, 1000); ltTick();
     readBox(j);
   }
+  var LT = {};
+  function ltSecs(){ return Math.round((LT.acc + (LT.on ? Date.now() - LT.t0 : 0)) / 1000); }
+  function ltMMSS(s){ return ('0' + Math.floor(s / 60)).slice(-2) + ':' + ('0' + s % 60).slice(-2); }
+  function ltTick(){ var el = document.getElementById('ltimer'); if (!el){ clearInterval(LT.iv); return; } if (LT.done) return; el.textContent = '⏱ 閱讀計時 ' + ltMMSS(ltSecs()) + '・按「已詳讀」時會記錄閱讀時間'; }
   function fmt(t){ var d = new Date(t); return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
   function readBox(j){
     var el = document.getElementById('lread'), r = j.read;
@@ -644,7 +652,8 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
     el.innerHTML = (r && r.ver !== j.ver ? '<div class="note warn">教案在你上次讀過之後有更新，請再看一次。</div>' : '') + '<button class="go" id="iread">✅ 我已詳讀完畢</button>';
     document.getElementById('iread').onclick = function(){
       var b = this; b.disabled = true; b.textContent = '記錄中…';
-      post({ action: 'wedLiff', op: 'lessonRead', ver: j.ver }).then(function(x){ if (!x || !x.ok) throw new Error((x && x.error) || ''); j.read = { ver: j.ver, at: x.at }; readBox(j); })
+      var secs = ltSecs();
+      post({ action: 'wedLiff', op: 'lessonRead', ver: j.ver, secs: secs }).then(function(x){ if (!x || !x.ok) throw new Error((x && x.error) || ''); j.read = { ver: j.ver, at: x.at }; LT.done = true; clearInterval(LT.iv); var tl = document.getElementById('ltimer'); if (tl) tl.textContent = '✅ 已記錄閱讀時間 ' + ltMMSS(secs); readBox(j); })
         .catch(function(){ b.disabled = false; b.textContent = '✅ 我已詳讀完畢'; alert('記錄失敗，請再按一次'); });
     };
   }
