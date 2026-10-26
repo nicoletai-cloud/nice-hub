@@ -310,10 +310,10 @@ nav.pages a.ext:hover{border-color:var(--accent);color:var(--accent)}
   <details class="conn" id="conn">
     <summary>連線設定</summary>
     <div class="connbody">
-      <label for="inUrl">機器人程式網址（結尾是 /exec）</label>
+      <label for="inUrl">機器人程式網址（已內建，通常不用填）</label>
       <input id="inUrl" type="text" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/…/exec">
-      <label for="inTok">機器人金鑰（Apps Script 裡的 TOKEN）</label>
-      <input id="inTok" type="text" class="nwc-secret" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore placeholder="貼上金鑰" style="-webkit-text-security:disc">
+      <label for="inTok">機器人金鑰，或貼上整串「手機設定連結」</label>
+      <input id="inTok" type="text" class="nwc-secret" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore placeholder="貼上金鑰或手機設定連結" style="-webkit-text-security:disc">
       <div class="row"><button type="button" class="btn" id="saveConn">儲存並讀取</button><span class="st" id="connMsg"></span></div>
     </div>
   </details>
@@ -323,11 +323,13 @@ nav.pages a.ext:hover{border-color:var(--accent);color:var(--accent)}
 (function(){
   var $=function(id){return document.getElementById(id)};
   var KEY_URL='hhlc_bot_url', KEY_TOKEN='hhlc_bot_token', KEY_CACHE='nwc_hub_counts';
+  /* 2026-10-26 機器人網址內建（和禮車派車同一支），新裝置只要貼金鑰或「手機設定連結」 */
+  var DEF_URL='https://script.google.com/macros/s/AKfycbwoKk13j5YOtkA5cTh3FtvECekYm0uMBPsid1H--kB7bhUVpDFvSnSA0iTzCfc8IT11_Q/exec';
   function ls(k){try{return localStorage.getItem(k)||''}catch(e){return ''}}
   function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
   /* 2026-10-15 同一台裝置已在禮車系統設定機器人連線的話，直接沿用，不用再設一次 */
   function wedS(k){try{var o=JSON.parse(localStorage.getItem('nwcw_settings')||'{}')||{};return String(o[k]||'')}catch(e){return ''}}
-  function botUrl(){var u=String(ls(KEY_URL)||wedS('driveUrl')||'').trim(); if(!u) return ''; u=u.split('?')[0].split('#')[0]; return /^https:\/\/script\.google\.com\/macros\/s\/[^\/]+\/exec$/.test(u)?u:''}
+  function botUrl(){var u=String(ls(KEY_URL)||wedS('driveUrl')||DEF_URL||'').trim(); if(!u) return ''; u=u.split('?')[0].split('#')[0]; return /^https:\/\/script\.google\.com\/macros\/s\/[^\/]+\/exec$/.test(u)?u:''}
 
   var WD='日一二三四五六', now=new Date();
   $('today').textContent=(now.getMonth()+1)+'/'+now.getDate()+'（週'+WD[now.getDay()]+'）';
@@ -416,11 +418,14 @@ nav.pages a.ext:hover{border-color:var(--accent);color:var(--accent)}
   }
   function openConn(){var d=$('conn'); if(d) d.open=true}
   $('saveConn').addEventListener('click',function(){
-    var u=String($('inUrl').value||'').trim().split('?')[0].split('#')[0], t=String($('inTok').value||'').trim(), m=$('connMsg');
+    var u=String($('inUrl').value||'').trim(), t=String($('inTok').value||'').trim(), m=$('connMsg');
+    [u,t].forEach(function(s){var x=s.match(/setup=([^&\s]+)/);if(x){try{var v=JSON.parse(decodeURIComponent(x[1]));if(v&&v.u&&v.k){u=String(v.u);t=String(v.k)}}catch(e){}}});
+    u=(u||DEF_URL).split('?')[0].split('#')[0];
     m.classList.add('err');
     if(!/^https:\/\/script\.google\.com\/macros\/s\/[^\/]+\/exec$/.test(u)){m.textContent='網址要是 https://script.google.com/macros/s/…/exec 開頭到 /exec 結尾';return}
     if(!t){m.textContent='請貼上金鑰';return}
-    lsSet(KEY_URL,u); lsSet(KEY_TOKEN,t); $('inTok').value=''; m.classList.remove('err'); m.textContent='已儲存';
+    lsSet(KEY_URL,u); lsSet(KEY_TOKEN,t); $('inTok').value=''; $('inUrl').value='';
+    try{var ws=JSON.parse(localStorage.getItem('nwcw_settings')||'{}')||{};if(!ws.driveKey){ws.driveUrl=ws.driveUrl||u;ws.driveKey=t;localStorage.setItem('nwcw_settings',JSON.stringify(ws))}}catch(e){} m.classList.remove('err'); m.textContent='已儲存';
     $('conn').open=false; load(); if(typeof loadCal==='function') loadCal(true);
   });
   $('refresh').addEventListener('click',load);
