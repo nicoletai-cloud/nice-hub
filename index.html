@@ -369,7 +369,7 @@ nav.pages a.ext:hover{border-color:var(--accent);color:var(--accent)}
         pairPost({action:'pairPoll',sec:sec}).then(function(r){
           if(r&&r.ok&&r.token){clearInterval(pairT);pairT=null;lsSet('hub_pair_sec','');
             lsSet(KEY_URL,DEF_URL); lsSet(KEY_TOKEN,r.token);
-            try{var ws=JSON.parse(localStorage.getItem('nwcw_settings')||'{}')||{};if(!ws.driveKey){ws.driveUrl=ws.driveUrl||DEF_URL;ws.driveKey=r.token;localStorage.setItem('nwcw_settings',JSON.stringify(ws))}}catch(e){}
+            try{var ws=JSON.parse(localStorage.getItem('nwcw_settings')||'{}')||{};ws.driveUrl=DEF_URL;ws.driveKey=r.token;localStorage.setItem('nwcw_settings',JSON.stringify(ws))}catch(e){}
             $('pairBox').hidden=true; load(); if(typeof loadCal==='function') loadCal(true);
           } else if(r&&!r.ok&&r.error==='expired'){clearInterval(pairT);pairT=null;startPair(true)}
         }).catch(function(){});
