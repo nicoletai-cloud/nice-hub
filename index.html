@@ -211,6 +211,7 @@ nav.pages a.ext:hover{border-color:var(--accent);color:var(--accent)}
     <span class="st" id="status">正在讀取今日待辦…</span>
     <button type="button" class="btn" id="refresh">重新整理</button>
   </div>
+  <div id="pairBox" hidden style="text-align:center;padding:14px 10px;margin:10px 0;border:1px solid #c9a46a;border-radius:14px"><div style="font-size:15px;opacity:.8">配對碼(10 分鐘內有效)</div><div id="pairCode" style="font-size:40px;font-weight:700;letter-spacing:6px;margin:4px 0">------</div><div id="pairMsg" style="font-size:14px;opacity:.8">把這 6 位數字傳給 Claude，核准後這裡會自動連上</div></div>
 
   <div id="pgHome">
 
@@ -305,7 +306,6 @@ nav.pages a.ext:hover{border-color:var(--accent);color:var(--accent)}
   </section>
 
   <section class="note" id="note" hidden>
-    <div id="pairBox" hidden style="text-align:center;padding:6px 0 10px"><div style="font-size:15px;opacity:.8">配對碼(10 分鐘內有效)</div><div id="pairCode" style="font-size:40px;font-weight:700;letter-spacing:6px;margin:4px 0">------</div><div id="pairMsg" style="font-size:14px;opacity:.8">把這 6 位數字傳給 Claude，核准後這裡會自動連上</div></div>
     <p>數量來自「好好禮車機器人」。這個瀏覽器還沒設定連線：在下面貼上機器人網址與金鑰，只會存在這個瀏覽器（和機場工具共用同一份設定），不會寫進程式碼。</p>
   </section>
   <details class="conn" id="conn">
