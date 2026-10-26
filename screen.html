@@ -1,0 +1,13 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>螢幕尺寸檢查</title>
+<style>body{margin:0;font:600 20px/1.5 system-ui,"PingFang TC",sans-serif;background:#f8e4e2;color:#3b2a1e;padding:calc(env(safe-area-inset-top) + 16px) 16px 24px}h1{font-size:22px;margin:0 0 12px}.n{font-size:44px;color:#a9793b}.r{background:#fff;border-radius:14px;padding:12px 14px;margin:0 0 10px}small{color:#8a7a6c;font-weight:500}</style></head><body>
+<h1>螢幕尺寸檢查</h1><div id="o"></div><small>請在「闔起來」和「打開」兩種狀態各截一張圖給 Claude；轉橫向也可以各截一張。</small>
+<script>
+function sa(k){const d=document.createElement('div');d.style.cssText='position:fixed;top:0;left:0;padding-'+k+':env(safe-area-inset-'+k+')';document.body.appendChild(d);const v=getComputedStyle(d)['padding'+k[0].toUpperCase()+k.slice(1)];d.remove();return v}
+function r(){const w=innerWidth,h=innerHeight;document.getElementById('o').innerHTML=
+`<div class="r">寬 <span class="n">${w}</span> × 高 <span class="n">${h}</span></div>
+<div class="r">螢幕 ${screen.width} × ${screen.height}　像素比 ${devicePixelRatio}</div>
+<div class="r">方向 ${w>h?'橫向':'直向'}　${matchMedia('(display-mode: standalone)').matches||navigator.standalone?'已加入主畫面 App':'Safari 網頁'}</div>
+<div class="r">安全區 上 ${sa('top')} 下 ${sa('bottom')} 左 ${sa('left')} 右 ${sa('right')}</div>
+<div class="r"><small>${navigator.userAgent}</small></div>`}
+r();addEventListener('resize',r);addEventListener('orientationchange',()=>setTimeout(r,300));
+</script></body></html>
