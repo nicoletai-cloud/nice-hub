@@ -305,6 +305,7 @@ nav.pages a.ext:hover{border-color:var(--accent);color:var(--accent)}
   </section>
 
   <section class="note" id="note" hidden>
+    <div id="pairBox" hidden style="text-align:center;padding:6px 0 10px"><div style="font-size:15px;opacity:.8">配對碼(10 分鐘內有效)</div><div id="pairCode" style="font-size:40px;font-weight:700;letter-spacing:6px;margin:4px 0">------</div><div id="pairMsg" style="font-size:14px;opacity:.8">把這 6 位數字傳給 Claude，核准後這裡會自動連上</div></div>
     <p>數量來自「好好禮車機器人」。這個瀏覽器還沒設定連線：在下面貼上機器人網址與金鑰，只會存在這個瀏覽器（和機場工具共用同一份設定），不會寫進程式碼。</p>
   </section>
   <details class="conn" id="conn">
@@ -352,12 +353,35 @@ nav.pages a.ext:hover{border-color:var(--accent);color:var(--accent)}
   var cached=null; try{cached=JSON.parse(ls(KEY_CACHE)||'null')}catch(e){}
   if(cached&&cached.data){render(cached.data)}
 
+
+  /* 2026-10-26 新裝置配對：顯示 6 位數配對碼，核准後自動取得金鑰(金鑰不經過對話、不用手動貼) */
+  var pairT=null, pairEnd=0;
+  function pairPost(body){return fetch(DEF_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body),cache:'no-store'}).then(function(r){return r.json()})}
+  function pairSec(fresh){var s=fresh?'':ls('hub_pair_sec'); if(!s){var a=new Uint8Array(24); crypto.getRandomValues(a); s=Array.prototype.map.call(a,function(x){return ('0'+x.toString(16)).slice(-2)}).join(''); lsSet('hub_pair_sec',s)} return s}
+  function startPair(fresh){
+    if(pairT) return; var box=$('pairBox'); if(!box) return; box.hidden=false;
+    var sec=pairSec(fresh); pairEnd=Date.now()+600000;
+    pairPost({action:'pairReq',sec:sec}).then(function(j){
+      if(!j||!j.ok||!j.code){$('pairMsg').textContent='取得配對碼失敗，請按「重新整理」再試';return}
+      $('pairCode').textContent=j.code;
+      pairT=setInterval(function(){
+        if(Date.now()>pairEnd){clearInterval(pairT);pairT=null;lsSet('hub_pair_sec','');$('pairMsg').textContent='配對碼過期了，按「重新整理」會產生新的';return}
+        pairPost({action:'pairPoll',sec:sec}).then(function(r){
+          if(r&&r.ok&&r.token){clearInterval(pairT);pairT=null;lsSet('hub_pair_sec','');
+            lsSet(KEY_URL,DEF_URL); lsSet(KEY_TOKEN,r.token);
+            try{var ws=JSON.parse(localStorage.getItem('nwcw_settings')||'{}')||{};if(!ws.driveKey){ws.driveUrl=ws.driveUrl||DEF_URL;ws.driveKey=r.token;localStorage.setItem('nwcw_settings',JSON.stringify(ws))}}catch(e){}
+            $('pairBox').hidden=true; load(); if(typeof loadCal==='function') loadCal(true);
+          } else if(r&&!r.ok&&r.error==='expired'){clearInterval(pairT);pairT=null;startPair(true)}
+        }).catch(function(){});
+      },4000);
+    }).catch(function(){$('pairMsg').textContent='連不到機器人，請確認網路後按「重新整理」'});
+  }
   var busy=false;
   function load(){
     if(busy) return;
     var url=botUrl(), token=String(ls(KEY_TOKEN)||wedS('driveKey')||'').trim();
     if(!url||!token){
-      $('note').hidden=false; openConn();
+      $('note').hidden=false; startPair();
       status(cached&&cached.ts?'尚未連線機器人，顯示的是 '+hhmm(cached.ts)+' 的舊數字':'尚未連線機器人，還看不到今日待辦數量',true);
       return;
     }
