@@ -36,6 +36,8 @@
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:21px;line-height:1.55}
 .wrap{max-width:1000px;margin:0 auto;padding:22px max(16px,env(safe-area-inset-left)) calc(48px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-right))}
+/* 2026-10-28 Nicole：iPhone Duo 直立時系統回報左側安全區，畫面整個往右縮 → 直立一律靠左，只留 16px */
+@media (orientation:portrait){.wrap{padding-left:16px!important;margin-left:0}}
 header.top{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;padding-bottom:14px}
 .brand{display:flex;align-items:baseline;gap:10px;margin-right:auto}
 .brand b{font-size:31px;color:var(--accent);letter-spacing:.06em;font-weight:700}
