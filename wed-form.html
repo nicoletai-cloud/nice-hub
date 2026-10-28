@@ -82,8 +82,8 @@ button.go:disabled{opacity:.6}
 <body>
 <div class="wrap">
   <div class="brand">好好禮車 NICE WEDDING CAR</div>
-  <h1>婚禮用車・行程確認</h1>
-  <p class="lead">謝謝你們，讓好好禮車陪伴這一天。
+  <h1 id="h1">婚禮用車・行程確認</h1>
+  <p class="lead" id="lead">謝謝你們，讓好好禮車陪伴這一天。
 請留下聯絡資訊、用車行程與婚禮細節，讓我們一起把重要的每一段路，好好安排。
 
 行程尚未定案也沒關係，現階段可先填寫大致行程與預估用車時間，以利我們製作電子合約。地點或行程尚未確定的欄位，可先填寫「待確認」。用車前一週，我們將再次與您核對行程及確切用車時間。</p>
@@ -91,8 +91,20 @@ button.go:disabled{opacity:.6}
   <form id="f" novalidate>
     <div class="hp" aria-hidden="true"><label>請勿填寫<input id="hp" tabindex="-1" autocomplete="off"></label></div>
 
-    <div class="sec"><h2><i>01</i>關於你們</h2><p>留下聯絡方式，讓重要的安排順利銜接。</p></div>
+    <div class="sec"><h2><i>01</i><span id="s1t">關於你們</span></h2><p id="s1p">留下聯絡方式，讓重要的安排順利銜接。</p></div>
     <div class="field"><label class="q" for="no">訂單編號</label><div class="help">此編號由客服預先填入；如未顯示，可留空並繼續填寫。</div><input id="no" autocomplete="off"></div>
+    <!-- 2026-10-28 Nicole：遊覽車接駁單：只填當天聯絡人＋用車流程，不問甘蔗／車頭彩，不做合約 -->
+    <div id="busBox" hidden>
+      <div class="field"><label class="q" for="bName">當天聯絡人姓名<b>*</b></label><input id="bName" autocomplete="name"></div>
+      <div class="field"><label class="q" for="bPhone">當天聯絡人電話<b>*</b></label><div class="help">請填寫用車當天方便聯繫的手機號碼。</div><input id="bPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="09xxxxxxxx"></div>
+      <div class="sec"><h2><i>02</i>用車流程</h2><p>請確認每一段的時間與地點；地點請填寫完整地址或場館名稱。
+時間或地點尚未確定，可先填寫大致內容，用車前一週會再與您核對。</p></div>
+      <div class="note-tip" id="bInfo" hidden></div>
+      <div id="bStops"></div>
+      <div class="field"><button type="button" class="addstop" id="bAdd">＋ 新增一段</button></div>
+      <div class="field"><label class="q" for="bNote">其他說明<small>選填</small></label><textarea id="bNote" placeholder="例：回程送客到台中高鐵站、乘車人數約 40 人"></textarea></div>
+    </div>
+    <div id="wedOnly">
     <div class="row2">
       <div class="field"><label class="q" for="groom">新郎姓名<b>*</b></label><input id="groom" autocomplete="off" data-req></div>
       <div class="field"><label class="q" for="bride">新娘姓名<b>*</b></label><input id="bride" autocomplete="off" data-req></div>
@@ -144,6 +156,7 @@ button.go:disabled{opacity:.6}
         <div class="decosum" id="decoSum"></div>
       </div>
     </div>
+    </div>
 
     <div class="err" id="err"></div>
     <button class="go" id="go" type="submit">送出</button>
@@ -152,7 +165,7 @@ button.go:disabled{opacity:.6}
   <div class="done" id="done" hidden>
     <div class="big">🤍</div>
     <h2>已收到，謝謝你們！</h2>
-    <p>我們會依照這份資料製作電子合約。
+    <p id="doneP">我們會依照這份資料製作電子合約。
 用車前一週會再與你們核對確切行程與時間。
 填寫完成後，也麻煩回覆訊息通知客服喔。</p>
   </div>
@@ -165,6 +178,38 @@ button.go:disabled{opacity:.6}
   var Q = new URLSearchParams(location.search), no = (Q.get('no') || Q.get('entry.1571552052') || '').trim();
   if (no){ $('no').value = no; $('no').readOnly = true; }
   var PREVIEW = Q.get('preview') === '1';
+  // 遊覽車接駁單：網址有 t=bus，或機器人回報這張單是遊覽車
+  var BUS = false;
+  function bStopEl(r){
+    var d = document.createElement('div'); d.className = 'field stop';
+    d.innerHTML = '<div class="qrow"><label class="q"><span class="bn"></span></label><button type="button" class="rm">移除</button></div>' +
+      '<label class="q" style="font-size:15px">時間<b>*</b></label><input type="time" class="bT">' +
+      '<label class="q" style="font-size:15px">上車地點<b>*</b></label><input class="bF" placeholder="完整地址或場館名稱">' +
+      '<label class="q" style="font-size:15px">中停地點<small>選填</small></label><input class="bV" placeholder="沒有可留空">' +
+      '<label class="q" style="font-size:15px">下車地點<b>*</b></label><input class="bD" placeholder="完整地址或場館名稱">';
+    r = r || {}; d.querySelector('.bT').value = /^\d{1,2}:\d{2}$/.test(r.t || '') ? ('0' + r.t).slice(-5) : ''; d.querySelector('.bF').value = r.from || ''; d.querySelector('.bV').value = r.via || ''; d.querySelector('.bD').value = r.to || '';
+    d.querySelector('.rm').onclick = function(){ if (bBlocks().length > 1){ d.remove(); bNum(); } };
+    $('bStops').appendChild(d); bNum(); return d;
+  }
+  function bBlocks(){ return Array.prototype.slice.call($('bStops').querySelectorAll('.stop')); }
+  function bNum(){ var L = bBlocks(); L.forEach(function(d, i){ d.querySelector('.bn').textContent = '第 ' + (i + 1) + ' 段'; d.querySelector('.rm').hidden = L.length < 2; }); $('bAdd').disabled = L.length >= 10; }
+  function bVals(){ return bBlocks().map(function(d){ return { t: d.querySelector('.bT').value, from: d.querySelector('.bF').value.trim(), via: d.querySelector('.bV').value.trim(), to: d.querySelector('.bD').value.trim(), el: d }; }); }
+  $('bAdd').onclick = function(){ var d = bStopEl({}); d.querySelector('.bT').focus(); };
+  function setBus(info){
+    if (!BUS){
+      BUS = true; $('busBox').hidden = false; $('wedOnly').hidden = true;
+      document.title = '遊覽車行程確認｜好好禮車'; $('h1').textContent = '遊覽車行程確認';
+      $('lead').textContent = '謝謝您預約好好禮車的遊覽車接駁。\n請留下用車當天的聯絡人，並確認用車流程的時間與地點。\n\n行程尚未定案也沒關係，可先填寫大致內容；用車前一週，我們會再與您核對確切時間與行程，並提供用車說明。';
+      $('s1t').textContent = '當天聯絡人'; $('s1p').textContent = '司機與客服會聯繫這位聯絡人。';
+      $('doneP').textContent = '我們會依照這份資料安排車輛。\n用車前一週會再與您核對確切行程與時間，並提供用車說明。\n填寫完成後，也麻煩回覆訊息通知客服喔。';
+      if (!bBlocks().length) bStopEl({});
+    }
+    if (info && Array.isArray(info.stops) && info.stops.some(function(r){ return r && (r.from || r.to); }) && !bVals().some(function(v){ return v.t || v.from || v.via || v.to; })){
+      $('bStops').innerHTML = ''; info.stops.slice(0, 10).forEach(function(r){ if (r && (r.t || r.from || r.via || r.to)) bStopEl(r); }); if (!bBlocks().length) bStopEl({});
+    }
+    if (info && (info.date || info.cars)){ var m = String(info.date || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); $('bInfo').textContent = [m ? '用車日期：' + m[1] + '/' + m[2] + '/' + m[3] : '', info.cars ? '車型：' + info.cars : ''].filter(Boolean).join('\n'); $('bInfo').style.whiteSpace = 'pre-line'; $('bInfo').hidden = !$('bInfo').textContent; }
+  }
+  if (Q.get('t') === 'bus') setBus(null);
   if (PREVIEW){ var bn = document.createElement('div'); bn.textContent = '預覽模式：按送出不會真的送出資料'; bn.style.cssText = 'background:#fbeee6;color:#b4532a;border-radius:10px;padding:10px 14px;margin:10px 0;font-size:15px'; document.querySelector('.wrap').insertBefore(bn, $('f')); }
 
   // 單選按鈕群組（含「其他」自行填寫）
@@ -195,6 +240,7 @@ button.go:disabled{opacity:.6}
   }
   fetch(BOT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'wedForm', op: 'info', no: no }) }).then(function(r){ return r.json(); }).then(function(j){
     if (!j || !j.ok) return;
+    if (j.bus){ setBus(j.bus); return; }
     if (+j.hours > 0){ PLAN = +j.hours; hoursTip(); }
     if (Array.isArray(j.deco) && j.deco.length){ DECO = j.deco.filter(function(z){ return z && z.code; }); renderDeco(); }
     var P = j.places;
@@ -309,8 +355,30 @@ button.go:disabled{opacity:.6}
   function fail(msg, el){ $('err').textContent = msg; if (el){ el.classList.add('bad'); el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } }
   document.addEventListener('input', function(e){ if (e.target.classList) e.target.classList.remove('bad'); $('err').textContent = ''; });
 
+  function busSubmit(){
+    var nm = $('bName').value.trim(), ph = $('bPhone').value.trim();
+    if (!nm) return fail('請填寫：當天聯絡人姓名', $('bName'));
+    if (!/^[0-9+\-\s()]{8,20}$/.test(ph)) return fail(ph ? '電話格式不正確' : '請填寫：當天聯絡人電話', $('bPhone'));
+    var V = bVals().filter(function(v){ return v.t || v.from || v.via || v.to; });
+    if (!V.length) return fail('請至少填寫一段用車流程', bBlocks()[0].querySelector('.bT'));
+    for (var i = 0; i < V.length; i++){
+      if (!V[i].t) return fail('請填寫第 ' + (bBlocks().indexOf(V[i].el) + 1) + ' 段的時間', V[i].el.querySelector('.bT'));
+      if (!V[i].from) return fail('請填寫第 ' + (bBlocks().indexOf(V[i].el) + 1) + ' 段的上車地點', V[i].el.querySelector('.bF'));
+      if (!V[i].to) return fail('請填寫第 ' + (bBlocks().indexOf(V[i].el) + 1) + ' 段的下車地點', V[i].el.querySelector('.bD'));
+    }
+    var lines = V.map(function(v){ return v.t + ' ' + ['上車:' + v.from, v.via ? '中停:' + v.via : '', '下車:' + v.to].filter(Boolean).join(' → '); });
+    var body = { action: 'wedForm', bus: '1', hp: $('hp').value, no: $('no').value.trim(), role: nm, rel: '當天聯絡人', phone: ph, start: V[0].t, meet: V[0].from, route: lines.join('\n'), note: $('bNote').value.trim(),
+      busStops: JSON.stringify(V.map(function(v){ return { t: v.t, from: v.from, via: v.via, to: v.to }; })) };
+    if (PREVIEW){ $('f').hidden = true; $('done').hidden = false; $('doneP').textContent = '（預覽模式：資料沒有送出）\n\n' + ['當天聯絡人：' + nm + ' ' + ph].concat(lines).concat(body.note ? ['其他說明：' + body.note] : []).join('\n'); window.scrollTo(0, 0); return; }
+    var go = $('go'); go.disabled = true; go.textContent = '送出中…';
+    fetch(BOT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) })
+      .then(function(r){ return r.json(); })
+      .then(function(j){ if (!j || !j.ok) throw new Error((j && j.error) || '送出失敗'); $('f').hidden = true; $('done').hidden = false; window.scrollTo(0, 0); })
+      .catch(function(err){ go.disabled = false; go.textContent = '送出'; fail((err && err.message ? err.message : '送出失敗') + '，請再試一次；如果一直失敗，請直接聯絡客服。'); });
+  }
   $('f').addEventListener('submit', function(e){
     e.preventDefault(); $('err').textContent = '';
+    if (BUS) return busSubmit();
     var req = document.querySelectorAll('[data-req]');
     for (var i = 0; i < req.length; i++){ if (!req[i].value.trim()){ var lb = document.querySelector('label[for="' + req[i].id + '"]'); return fail('請填寫：' + (lb ? lb.textContent.replace('*', '') : ''), req[i]); } }
     if (!/^[0-9+\-\s()]{8,20}$/.test($('phone').value.trim())) return fail('電話格式不正確', $('phone'));
