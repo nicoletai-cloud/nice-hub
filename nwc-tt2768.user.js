@@ -1,9 +1,10 @@
 // ==UserScript==
-// @name         好好禮車｜TimeTree 2768 自動同步（Vincent 機場單）
+// @name         好好禮車｜TimeTree 2768 自動同步（Vincent 機場單）＋官方帳號人工回覆偵測
 // @namespace    https://nicoletai-cloud.github.io/
-// @version      1.0
+// @version      1.1
 // @description  開著 TimeTree 2768 分頁，每 3 分鐘向好好禮車系統拿「Vincent 已確認接案」的機場／接送／包車趟次，自動新增或更新到 2768；改派或取消的會標成【已改派】（不刪除）。
 // @match        https://timetreeapp.com/*
+// @match        https://chat.line.biz/*
 // @match        https://nicoletai-cloud.github.io/nice-wedding-procession/*
 // @grant        GM_xmlhttpRequest
 // @grant        GM_getValue
@@ -26,6 +27,11 @@
     } catch (e) {}
     return;
   }
+
+  // 2026-11-01 Nicole：官方帳號後台（chat.line.biz）分頁開著時，每 3 分鐘看「還沒回覆」的客人：
+  // 你在後台／手機 App 手動回過（之後客人沒再傳新訊息）→ 通知機器人把提醒消掉、機器人也不再接話。
+  // 只讀取訊息，不會傳訊息、不會改已讀。
+  if (location.hostname === 'chat.line.biz') { lineWatch(); return; }
 
   var badgeEl = null;
   function badge(t, bad) {
@@ -85,6 +91,41 @@
       badge(hm + ' 已同步' + (n.add || n.upd || n.gone ? '（新增 ' + n.add + '、更新 ' + n.upd + '、已改派 ' + n.gone + '）' : '，沒有變動') + (errs.length ? '\n' + errs.join('\n') : ''), errs.length > 0);
     } catch (e) { badge(String(e.message || e), true); }
     finally { busy = false; }
+  }
+  function lineWatch() {
+    var bel = null;
+    function lb(t, bad) {
+      if (!bel) { bel = document.createElement('div'); bel.style.cssText = 'position:fixed;left:10px;bottom:10px;z-index:99999;font:12px/1.5 sans-serif;padding:6px 10px;border-radius:8px;max-width:360px;white-space:pre-line;box-shadow:0 2px 8px rgba(0,0,0,.2);pointer-events:none;opacity:.9'; document.body.appendChild(bel); }
+      bel.style.background = bad ? '#fbeee6' : '#f3ece2'; bel.style.color = bad ? '#b4532a' : '#5a4630';
+      bel.textContent = '好好禮車｜人工回覆偵測：' + t;
+    }
+    var busy2 = false;
+    async function scan() {
+      if (busy2) return; busy2 = true;
+      try {
+        if (!GM_getValue('key', '')) { lb('尚未帶入金鑰：請在這台電腦打開「好好禮車婚禮派車」一次，再回來重新整理', true); return; }
+        var m = location.pathname.match(/^\/(U[0-9a-f]{32})/); if (!m) { lb('請停在「好好禮車」官方帳號的聊天頁', true); return; }
+        var bid = m[1], J = await bot({ action: 'oaHuman', list: [] });
+        if (!J || !J.ok) { lb('機器人回覆錯誤：' + ((J && J.error) || '?'), true); return; }
+        var list = [], ids = (J.watch || []).slice(0, 40);
+        for (var i = 0; i < ids.length; i++) {
+          var r = await fetch('/api/v3/bots/' + bid + '/chats/' + ids[i] + '/messages', { headers: { accept: 'application/json' }, credentials: 'same-origin' });
+          if (r.status === 401 || r.status === 403) { lb('官方帳號後台被登出了，請重新登入', true); return; }
+          if (!r.ok) continue;
+          var ev = ((await r.json()).list) || [], hu = 0, cu = 0;
+          ev.forEach(function (e) {
+            if (e.type === 'message' && e.timestamp > cu) cu = e.timestamp;   // 客人傳的
+            if (e.type === 'messageSent' && e.sendId && e.bizId && !/^__/.test(String(e.bizId)) && e.timestamp > hu) hu = e.timestamp;   // 真人（後台／App）傳的；機器人、自動回應沒有 sendId
+          });
+          if (hu) list.push({ uid: ids[i], humanAt: hu, custAt: cu });
+        }
+        var R2 = list.length ? await bot({ action: 'oaHuman', list: list }) : J;
+        var now = new Date(), hm = ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2);
+        lb(hm + ' 已檢查 ' + ids.length + ' 位' + (R2 && R2.cleared ? '，' + R2.cleared + ' 位已人工回覆、提醒已消掉' : ''));
+      } catch (e) { lb(String(e.message || e), true); }
+      finally { busy2 = false; }
+    }
+    setTimeout(scan, 5000); setInterval(scan, EVERY);
   }
   if (location.pathname.indexOf('/calendars/' + CAL) !== 0) { badge('這個分頁要停在 2768 行事曆才會同步'); return; }
   setTimeout(run, 4000); setInterval(run, EVERY);
