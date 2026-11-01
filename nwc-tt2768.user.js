@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         好好禮車｜TimeTree 2768 自動同步（Vincent 機場單）＋官方帳號人工回覆偵測
 // @namespace    https://nicoletai-cloud.github.io/
-// @version      1.1
+// @version      1.2
 // @description  開著 TimeTree 2768 分頁，每 3 分鐘向好好禮車系統拿「Vincent 已確認接案」的機場／接送／包車趟次，自動新增或更新到 2768；改派或取消的會標成【已改派】（不刪除）。
 // @match        https://timetreeapp.com/*
 // @match        https://chat.line.biz/*
@@ -16,6 +16,8 @@
 // ==/UserScript==
 (function () {
   'use strict';
+  // 2026-11-01 同一台電腦裝了兩份這個小程式時，只讓先跑的那一份動作（避免 TimeTree 重複新增）
+  if (document.documentElement.getAttribute('data-nwc-tt')) return; document.documentElement.setAttribute('data-nwc-tt', '1');
   var URL = 'https://script.google.com/macros/s/AKfycbwoKk13j5YOtkA5cTh3FtvECekYm0uMBPsid1H--kB7bhUVpDFvSnSA0iTzCfc8IT11_Q/exec';
   var CID = 85538428, CAL = 'H3mWcnDaKup1', VINCENT = 42745153, TZ = 'Asia/Taipei', EVERY = 3 * 60e3;
   var MK = function (c) { return '〔機場單 ' + c + '｜系統同步〕'; };
