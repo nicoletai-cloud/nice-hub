@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         好好禮車｜TimeTree 2768 自動同步（Vincent 機場單）＋官方帳號人工回覆偵測
 // @namespace    https://nicoletai-cloud.github.io/
-// @version      1.2
+// @version      1.3
 // @description  開著 TimeTree 2768 分頁，每 3 分鐘向好好禮車系統拿「Vincent 已確認接案」的機場／接送／包車趟次，自動新增或更新到 2768；改派或取消的會標成【已改派】（不刪除）。
 // @match        https://timetreeapp.com/*
 // @match        https://chat.line.biz/*
@@ -109,9 +109,29 @@
         var m = location.pathname.match(/^\/(U[0-9a-f]{32})/); if (!m) { lb('請停在「好好禮車」官方帳號的聊天頁', true); return; }
         var bid = m[1], J = await bot({ action: 'oaHuman', list: [] });
         if (!J || !J.ok) { lb('機器人回覆錯誤：' + ((J && J.error) || '?'), true); return; }
-        var list = [], ids = (J.watch || []).slice(0, 40);
+        // 2026-11-04 官方帳號後台的聊天 ID 和系統收到的 userId 不一樣 → 先讀聊天列表，用客人名字＋最後傳訊時間對上是哪一個聊天
+        var info = J.info || (J.watch || []).map(function (u) { return { uid: u }; }), chats = [], nx = '';
+        for (var pg = 0; pg < 6; pg++) {
+          var rl = await fetch('/api/v2/bots/' + bid + '/chats?folderType=ALL&limit=25' + (nx ? '&next=' + encodeURIComponent(nx) : ''), { headers: { accept: 'application/json' }, credentials: 'same-origin' });
+          if (rl.status === 401 || rl.status === 403) { lb('官方帳號後台被登出了，請重新登入', true); return; }
+          if (!rl.ok) break;
+          var jl = await rl.json(); chats = chats.concat(jl.list || []); nx = jl.next;
+          if (!nx || !(jl.list || []).length || Date.now() - (+(jl.list[jl.list.length - 1] || {}).updatedAt || 0) > 4 * 864e5) break;
+        }
+        var nm = function (t) { return String(t || '').replace(/\s+/g, '').toLowerCase(); };
+        var pairs = [];
+        info.slice(0, 40).forEach(function (w) {
+          var cid = w.chat;
+          if (!cid) {
+            var c = chats.filter(function (x) { return x.profile && nm(x.profile.name) && nm(x.profile.name) === nm(w.name); });
+            if (c.length > 1 && w.last) c = c.filter(function (x) { return Math.abs((+x.lastReceivedAt || 0) - w.last) < 15 * 60e3; });
+            if (c.length === 1) cid = c[0].chatId;
+          }
+          if (cid) pairs.push({ uid: w.uid, chat: cid });
+        });
+        var list = [], ids = pairs;
         for (var i = 0; i < ids.length; i++) {
-          var r = await fetch('/api/v3/bots/' + bid + '/chats/' + ids[i] + '/messages', { headers: { accept: 'application/json' }, credentials: 'same-origin' });
+          var r = await fetch('/api/v3/bots/' + bid + '/chats/' + ids[i].chat + '/messages', { headers: { accept: 'application/json' }, credentials: 'same-origin' });
           if (r.status === 401 || r.status === 403) { lb('官方帳號後台被登出了，請重新登入', true); return; }
           if (!r.ok) continue;
           var ev = ((await r.json()).list) || [], hu = 0, cu = 0;
@@ -119,11 +139,11 @@
             if (e.type === 'message' && e.timestamp > cu) cu = e.timestamp;   // 客人傳的
             if (e.type === 'messageSent' && e.sendId && e.bizId && !/^__/.test(String(e.bizId)) && e.timestamp > hu) hu = e.timestamp;   // 真人（後台／App）傳的；機器人、自動回應沒有 sendId
           });
-          if (hu) list.push({ uid: ids[i], humanAt: hu, custAt: cu });
+          if (hu) list.push({ uid: ids[i].uid, chat: ids[i].chat, humanAt: hu, custAt: cu });
         }
         var R2 = list.length ? await bot({ action: 'oaHuman', list: list }) : J;
         var now = new Date(), hm = ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2);
-        lb(hm + ' 已檢查 ' + ids.length + ' 位' + (R2 && R2.cleared ? '，' + R2.cleared + ' 位已人工回覆、提醒已消掉' : ''));
+        lb(hm + ' 已檢查 ' + ids.length + '／' + info.length + ' 位' + (R2 && R2.cleared ? '，' + R2.cleared + ' 位已人工回覆、提醒已消掉' : ''));
       } catch (e) { lb(String(e.message || e), true); }
       finally { busy2 = false; }
     }
