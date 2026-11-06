@@ -349,7 +349,10 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       img.src = url;
     });
   }
-  function b64(blob){ return new Promise(function(res, rej){ var fr = new FileReader(); fr.onload = function(){ res(String(fr.result).split(',')[1] || ''); }; fr.onerror = rej; fr.readAsDataURL(blob); }); }
+  var READ_ERR = '讀不到這張照片，請改用「拍照」，或先把照片存到手機相簿再選一次';
+  function grab(file){ return new Promise(function(res, rej){ var fr = new FileReader(); fr.onload = function(){ res(new Blob([fr.result], { type: file.type || 'image/jpeg' })); }; fr.onerror = function(){ rej(new Error(READ_ERR)); }; try { fr.readAsArrayBuffer(file); } catch (x) { rej(new Error(READ_ERR)); } }); }
+  function errMsg(err){ return (err && err.message) || (err && err.type ? READ_ERR : '上傳失敗，請再試一次'); }
+  function b64(blob){ return new Promise(function(res, rej){ var fr = new FileReader(); fr.onload = function(){ res(String(fr.result).split(',')[1] || ''); }; fr.onerror = function(){ rej(new Error('照片轉檔失敗，請再試一次')); }; fr.readAsDataURL(blob); }); }
   function dErr(m){ $('dErr').hidden = !m; $('dErr').textContent = m || ''; }
   function upOne(k, file){
     return shrink(file).then(function(b){ if (b.size > 9 * 1024 * 1024) throw new Error('檔案太大（超過 9MB），請改拍照上傳');
@@ -358,11 +361,12 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
   }
   document.addEventListener('change', function(e){
     var k = e.target.getAttribute && e.target.getAttribute('data-up'); if (!k || !e.target.files || !e.target.files[0]) return;
-    var file = e.target.files[0]; e.target.value = ''; dErr('');
-    if (!bound){ if (DMAX[k] === 1) pend[k] = [file]; else if (cnt(k) < DMAX[k]) pend[k].push(file); renderDocs(); return; }
-    if (dBusy) return; dBusy = true;
-    var lab = e.target.parentNode; lab.lastChild.textContent = '上傳中…';
-    upOne(k, file).catch(function(err){ dErr(err.message || String(err)); lab.lastChild.textContent = '再試一次'; }).then(function(){ dBusy = false; });
+    var file = e.target.files[0], lab = e.target.parentNode;
+    if (bound && dBusy){ e.target.value = ''; return; }
+    var got = grab(file); e.target.value = ''; dErr('');
+    if (!bound){ got.then(function(b){ if (DMAX[k] === 1) pend[k] = [b]; else if (cnt(k) < DMAX[k]) pend[k].push(b); renderDocs(); }, function(err){ dErr(errMsg(err)); }); return; }
+    dBusy = true; lab.lastChild.textContent = '上傳中…';
+    got.then(function(b){ return upOne(k, b); }).catch(function(err){ dErr(errMsg(err)); lab.lastChild.textContent = '再試一次'; }).then(function(){ dBusy = false; });
   });
   document.addEventListener('click', function(e){
     var q = e.target.closest && e.target.closest('[data-pdel]');
@@ -399,7 +403,7 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
         var jobs = []; NEED.concat(['car']).forEach(function(k){ pend[k].forEach(function(f){ jobs.push([k, f]); }); });
         var upErr = '', chain = Promise.resolve();
         jobs.forEach(function(x, i){ chain = chain.then(function(){ $('go').textContent = '上傳證件 ' + (i + 1) + ' / ' + jobs.length + '…';
-          return upOne(x[0], x[1]).then(function(){ var L = pend[x[0]], at = L.indexOf(x[1]); if (at >= 0) L.splice(at, 1); }, function(err){ upErr = err.message || String(err); }); }); });
+          return upOne(x[0], x[1]).then(function(){ var L = pend[x[0]], at = L.indexOf(x[1]); if (at >= 0) L.splice(at, 1); }, function(err){ upErr = errMsg(err); }); }); });
         return chain.then(function(){ $('go').textContent = '儲存中…'; return post({ action: 'drvLiff', op: 'docsave', idToken: idToken }).then(setDocs, function(){}); })
           .then(function(){
             var miss = missList();

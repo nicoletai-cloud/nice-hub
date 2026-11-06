@@ -428,16 +428,20 @@ button.go.ghost{background:transparent;color:var(--accent);border:1px solid var(
       img.src = url;
     });
   }
-  function b64(blob){ return new Promise(function(res, rej){ var fr = new FileReader(); fr.onload = function(){ res(String(fr.result).split(',')[1] || ''); }; fr.onerror = rej; fr.readAsDataURL(blob); }); }
+  var READ_ERR = '讀不到這張照片，請改用「拍照」，或先把照片存到手機相簿再選一次';
+  function grab(file){ return new Promise(function(res, rej){ var fr = new FileReader(); fr.onload = function(){ res(new Blob([fr.result], { type: file.type || 'image/jpeg' })); }; fr.onerror = function(){ rej(new Error(READ_ERR)); }; try { fr.readAsArrayBuffer(file); } catch (x) { rej(new Error(READ_ERR)); } }); }
+  function errMsg(err){ return (err && err.message) || (err && err.type ? READ_ERR : '上傳失敗，請再試一次'); }
+  function b64(blob){ return new Promise(function(res, rej){ var fr = new FileReader(); fr.onload = function(){ res(String(fr.result).split(',')[1] || ''); }; fr.onerror = function(){ rej(new Error('照片轉檔失敗，請再試一次')); }; fr.readAsDataURL(blob); }); }
   document.addEventListener('change', function(e){
     if (!e.target.getAttribute || !e.target.getAttribute('data-up') || !e.target.files || !e.target.files[0]) return;
-    var file = e.target.files[0], kind = e.target.getAttribute('data-up'), errEl = $(kind === 'ins' ? 'e-ins' : kind === 'deco' ? 'e-deco' : 'e-photos'); e.target.value = '';
-    if (busy) return; busy = true; errEl.textContent = '';
+    var file = e.target.files[0], kind = e.target.getAttribute('data-up'), errEl = $(kind === 'ins' ? 'e-ins' : kind === 'deco' ? 'e-deco' : 'e-photos');
+    if (busy){ e.target.value = ''; return; }
+    var got = grab(file); e.target.value = ''; busy = true; errEl.textContent = '';
     var lab = e.target.parentNode; lab.lastChild.textContent = '上傳中…';
-    shrink(file).then(function(b){ if (b.size > 9 * 1024 * 1024) throw new Error('檔案太大（超過 9MB），請改用相機拍照');
+    got.then(shrink).then(function(b){ if (b.size > 9 * 1024 * 1024) throw new Error('檔案太大（超過 9MB），請改用相機拍照');
       var mime = b.type || file.type || 'image/jpeg'; return b64(b).then(function(s){ return post({ action: 'wedLiff', op: 'upload', kind: kind, cid: cid, plate: val('plate'), idToken: idToken, disp: disp, name: val('name'), mime: mime, b64: s }); }); })
       .then(function(j){ if (!j || !j.ok) throw new Error((j && j.error) || '上傳失敗，請再試一次'); setFiles(j); })
-      .catch(function(err){ errEl.textContent = err.message || String(err); lab.lastChild.textContent = '再試一次'; })
+      .catch(function(err){ errEl.textContent = errMsg(err); lab.lastChild.textContent = '再試一次'; })
       .then(function(){ busy = false; });
   });
   document.addEventListener('click', function(e){
